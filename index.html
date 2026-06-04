@@ -24,56 +24,36 @@
       <section class="card">
         <h2>Welcome</h2>
         <p class="subtitle">
-          Test your knowledge of Distributed Control Systems, field instrumentation,
-          safety, and cybersecurity. The quiz takes about 5 minutes.
+          Run a live classroom quiz from the host screen, or use the older
+          self-paced mode for individual practice.
         </p>
 
-        <form id="start-form" novalidate>
-          <label for="participant-name">Full name</label>
-          <input
-            id="participant-name"
-            type="text"
-            maxlength="60"
-            placeholder="e.g. John Smith"
-            autocomplete="name"
-            required
-          />
-
-          <label for="department">Department</label>
-          <select id="department" required>
-            <option value="" disabled selected>Select your department</option>
-            <option value="Operations">Operations</option>
-            <option value="Process">Process</option>
-            <option value="Instrument">Instrument</option>
-            <option value="Electrical">Electrical</option>
-            <option value="Maintenance">Maintenance</option>
-            <option value="Engineering">Engineering</option>
-          </select>
-
           <div class="hero-meta">
-            <div class="chip"><strong>Questions</strong>10 randomized</div>
-            <div class="chip"><strong>Per Question</strong>20-second timer</div>
-            <div class="chip"><strong>Pass Mark</strong>70%</div>
-            <div class="chip"><strong>Feedback</strong>Instant review</div>
+            <div class="chip"><strong>Live Host</strong>Project questions on screen</div>
+            <div class="chip"><strong>Players</strong>Answer from phones</div>
+            <div class="chip"><strong>Realtime</strong>Firebase sync</div>
+            <div class="chip"><strong>Practice</strong>Self-paced mode still available</div>
           </div>
 
           <div class="btn-row">
-            <button type="submit" class="btn" id="start-btn">Start Quiz</button>
-            <a href="leaderboard.html" class="btn btn-secondary">View Leaderboard</a>
+            <a href="host.html" class="btn">Open Host Screen</a>
+            <a href="join.html" class="btn btn-secondary">Join as Player</a>
           </div>
-        </form>
+          <div class="btn-row">
+            <a href="quiz.html" class="btn btn-secondary">Self-Paced Quiz</a>
+            <a href="leaderboard.html" class="btn btn-secondary">Old Local Leaderboard</a>
+          </div>
 
-        <!-- QR code section: replace src with your generated QR or keep the placeholder service -->
         <div class="qr-block">
           <img
-            src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https%3A%2F%2Fexample.netlify.app%2F"
-            alt="QR code to access this quiz"
+            src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https%3A%2F%2Fezhamq.netlify.app%2Fjoin.html"
+            alt="QR code to join the live quiz"
           />
           <div class="qr-text">
-            <strong>Scan to access on mobile</strong>
-            Replace the QR target with your deployed URL:
+            <strong>Scan to join live quiz</strong>
+            Player URL:
             <br />
-            <code>https://your-site.netlify.app/</code>
+            <code>https://ezhamq.netlify.app/join.html</code>
           </div>
         </div>
       </section>
@@ -84,11 +64,5 @@
     © DCS Awareness Quiz · Process Control &amp; Automation Training
   </footer>
 
-  <script src="questions.js"></script>
-  <script src="script.js"></script>
-  <script>
-    // ---- Landing page bootstrap ----
-    DCSQuiz.landing.init();
-  </script>
 </body>
 </html>

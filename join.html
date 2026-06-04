@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a2540" />
+  <title>Join Live Quiz · DCS Awareness</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">DCS</div>
+    <div>
+      <h1>Live DCS Awareness Quiz</h1>
+      <div class="sub">Player · Room <span id="room-code">main</span></div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="message-banner" id="config-warning" hidden>
+        Firebase is not configured yet. Please ask the host to finish setup.
+      </section>
+
+      <section class="card" id="join-card">
+        <h2>Join Quiz</h2>
+        <p class="subtitle" id="player-state">Waiting for host.</p>
+
+        <form id="join-form" novalidate>
+          <label for="player-name">Full name</label>
+          <input id="player-name" type="text" maxlength="60" placeholder="e.g. John Smith" autocomplete="name" required />
+
+          <label for="player-department">Department</label>
+          <select id="player-department" required>
+            <option value="" disabled selected>Select your department</option>
+            <option value="Operations">Operations</option>
+            <option value="Process">Process</option>
+            <option value="Instrument">Instrument</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Engineering">Engineering</option>
+          </select>
+
+          <div class="btn-row">
+            <button type="submit" class="btn">Join Live Quiz</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card" id="answer-card" hidden>
+        <div class="quiz-header">
+          <div><span id="player-category">Category</span> · <span id="player-question-number">0 / 0</span></div>
+          <div class="timer" id="player-timer">--</div>
+        </div>
+
+        <h2 class="question-text" id="player-question">Waiting for host.</h2>
+        <div class="options" id="player-options"></div>
+
+        <div class="result-grid">
+          <div class="stat">
+            <div class="label">Score</div>
+            <div class="value" id="player-score">0 points</div>
+          </div>
+          <div class="stat">
+            <div class="label">Rank</div>
+            <div class="value" id="player-rank">Rank -</div>
+          </div>
+        </div>
+
+        <div class="message-banner" id="player-message">Wait for the host.</div>
+      </section>
+    </div>
+  </main>
+
+  <footer>© DCS Awareness Quiz</footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="questions.js"></script>
+  <script src="live.js"></script>
+  <script>
+    DCSLiveQuiz.player.init();
+  </script>
+</body>
+</html>

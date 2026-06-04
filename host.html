@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a2540" />
+  <title>Live Host · DCS Awareness Quiz</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">DCS</div>
+    <div>
+      <h1>Live DCS Awareness Quiz</h1>
+      <div class="sub">Host Screen · Room <span id="room-code">main</span></div>
+    </div>
+  </header>
+
+  <main class="live-main">
+    <section class="live-stage">
+      <div class="live-status-row">
+        <span class="category-tag" id="host-category">Live Quiz</span>
+        <span class="timer" id="host-timer">--</span>
+      </div>
+
+      <div class="live-meta">
+        <span id="host-state">Lobby</span>
+        <span>Question <strong id="current-number">1</strong> / <strong id="question-count">0</strong></span>
+        <span>Players <strong id="player-count">0</strong></span>
+        <span>Answers <strong id="answer-count">0</strong></span>
+      </div>
+
+      <h2 class="live-question" id="host-question">Create a game, then ask users to scan the QR code.</h2>
+      <div class="live-options" id="host-options"></div>
+
+      <div class="host-controls">
+        <button class="btn" id="btn-new-game">New Game</button>
+        <button class="btn" id="btn-start-question">Start Question</button>
+        <button class="btn btn-secondary" id="btn-show-answer">Show Answer</button>
+        <button class="btn btn-secondary" id="btn-next-question">Next Question</button>
+        <button class="btn btn-secondary" id="btn-end-game">End</button>
+      </div>
+    </section>
+
+    <aside class="live-side">
+      <section class="card compact-card">
+        <h2>Join</h2>
+        <img class="join-qr" id="join-qr" alt="QR code for players to join" />
+        <p class="subtitle">Players scan this QR code.</p>
+        <code id="join-url">Loading...</code>
+      </section>
+
+      <section class="card compact-card">
+        <h2>Scores</h2>
+        <div id="scoreboard"></div>
+      </section>
+
+      <section class="message-banner" id="config-warning" hidden>
+        Firebase is not configured. Paste your Firebase config into firebase-config.js.
+      </section>
+    </aside>
+  </main>
+
+  <footer>© DCS Awareness Quiz</footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="questions.js"></script>
+  <script src="live.js"></script>
+  <script>
+    DCSLiveQuiz.host.init();
+  </script>
+</body>
+</html>

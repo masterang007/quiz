@@ -6,6 +6,9 @@ Built with plain HTML, CSS, and vanilla JavaScript — no frameworks, no build t
 
 ## Features
 
+- **Live host mode** — show one question at a time on a projector or TV.
+- **Player join mode** — users scan a QR code and answer from phones.
+- **Realtime scoring** — live mode uses Firebase Realtime Database.
 - **Landing page** — name input, department dropdown (Operations, Process, Instrument, Electrical, Maintenance, Engineering), QR code section.
 - **Randomized quiz** — 10 questions drawn from a bank of 30+, with answer order shuffled per question.
 - **20-second timer** per question with visual warning/critical states.
@@ -25,15 +28,60 @@ Built with plain HTML, CSS, and vanilla JavaScript — no frameworks, no build t
 ```
 /
 ├── index.html         # Landing page
+├── host.html          # Live host/projector screen
+├── join.html          # Live player phone screen
 ├── quiz.html          # Quiz engine
 ├── result.html        # Score + review
 ├── leaderboard.html   # Top 10
 ├── style.css          # All styles
 ├── script.js          # All logic (DCSQuiz namespace)
+├── live.js            # Realtime host/player logic
+├── firebase-config.js # Firebase project settings for live mode
 ├── questions.js       # 30+ question bank
 ├── netlify.toml       # Netlify static publish config
 └── README.md
 ```
+
+## Live quiz setup
+
+The live quiz works like a simple Kahoot-style flow:
+
+```text
+Host screen:  https://ezhamq.netlify.app/host.html
+Player phones: https://ezhamq.netlify.app/join.html
+```
+
+To make it realtime, configure Firebase:
+
+1. Go to https://console.firebase.google.com/ and create a project.
+2. Create a **Realtime Database**.
+3. Add a **Web app** in Firebase project settings.
+4. Copy the Firebase config into [`firebase-config.js`](firebase-config.js).
+5. Deploy to Netlify again.
+
+For early testing only, you can use temporary Realtime Database rules:
+
+```json
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+```
+
+Do not leave open rules for real assessment use. For production, restrict writes to expected room/player paths or add authentication.
+
+### Live quiz flow
+
+1. Open `host.html` on the projector.
+2. Click **New Game**.
+3. Players scan the QR code or open `join.html`.
+4. Players enter name and department.
+5. Host clicks **Start Question**.
+6. Players answer on phones.
+7. Host clicks **Show Answer**, then **Next Question**.
+8. Host clicks **End** to finish and show final scores.
 
 ## Question bank
 
@@ -102,10 +150,10 @@ Or drag the project folder onto https://app.netlify.com/drop for an instant URL.
 The landing page renders a placeholder QR using the public `qrserver.com` API. Once you have your deployed URL, edit the `<img>` `src` in [`index.html`](index.html):
 
 ```html
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https%3A%2F%2Fyour-site.netlify.app%2F" />
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https%3A%2F%2Fezhamq.netlify.app%2Fjoin.html" />
 ```
 
-URL-encode the destination (e.g., `https://` → `https%3A%2F%2F`).
+URL-encode the destination if you change it (e.g., `https://` → `https%3A%2F%2F`).
 
 ## Customization
 
