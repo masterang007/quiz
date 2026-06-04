@@ -456,6 +456,27 @@ input[type="text"]:focus, select:focus {
 .option.wrong .letter { background: var(--red); color: #fff; }
 .option:disabled { cursor: default; }
 
+/* Player live-quiz states:
+   - `data-locked` is used instead of the `disabled` HTML attribute so
+     the button still receives pointer events at the DOM level (we control
+     interactivity from JS).
+   - `is-waiting` dims un-touched options while the host hasn't started
+     the question yet, so users understand why nothing happens on tap. */
+.option[data-locked]            { cursor: default; }
+.option.is-waiting              { opacity: 0.55; }
+#answer-card.is-waiting::before {
+  content: "Waiting for host to start the question…";
+  display: block;
+  background: var(--gray-100);
+  color: var(--navy-700);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
 /* ---------- Results ---------- */
 .result-hero {
   text-align: center;

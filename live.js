@@ -177,7 +177,7 @@
         createdAt: now(),
         questions,
         players: {}
-      });
+      }).catch(reportHostError("Create game"));
     },
 
     startQuestion() {
@@ -188,12 +188,13 @@
         showAnswer: false,
         questionStartedAt: startedAt,
         questionEndsAt: startedAt + CONFIG.QUESTION_SECONDS * 1000
-      });
+      }).catch(reportHostError("Start question"));
       this.startLocalTimer();
     },
 
     showAnswer() {
-      roomRef().update({ status: "review", showAnswer: true });
+      roomRef().update({ status: "review", showAnswer: true })
+        .catch(reportHostError("Show answer"));
       this.stopLocalTimer();
     },
 
@@ -210,12 +211,13 @@
         questionStartedAt: null,
         questionEndsAt: null,
         showAnswer: false
-      });
+      }).catch(reportHostError("Next question"));
       this.stopLocalTimer();
     },
 
     endGame() {
-      roomRef().update({ status: "ended", showAnswer: true });
+      roomRef().update({ status: "ended", showAnswer: true })
+        .catch(reportHostError("End game"));
       this.stopLocalTimer();
     },
 
@@ -318,6 +320,7 @@
   const player = {
     room: null,
     id: playerId(),
+    pendingAnswer: null, // optimistic UI: index user just tapped, before DB confirms
 
     init() {
       $("#room-code").textContent = ROOM_ID;
@@ -336,6 +339,29 @@
         e.preventDefault();
         this.join();
       });
+
+      // Delegated click listener — attached ONCE, survives every re-render.
+      // The per-button listeners used previously were getting wiped out each
+      // time the room snapshot fired (which happens whenever anyone joins,
+      // answers, or the host changes status).
+      const optionsWrap = $("#player-options");
+      optionsWrap.addEventListener("click", (e) => {
+        const btn = e.target.closest(".option");
+        if (!btn || !optionsWrap.contains(btn)) return;
+        if (btn.hasAttribute("data-locked")) return;
+        const idx = Number(btn.dataset.answer);
+        if (Number.isInteger(idx)) this.answer(idx);
+      });
+      // iOS Safari occasionally swallows synthetic clicks on freshly-injected
+      // buttons; touchend gives us a reliable secondary path.
+      optionsWrap.addEventListener("touchend", (e) => {
+        const btn = e.target.closest(".option");
+        if (!btn || !optionsWrap.contains(btn)) return;
+        if (btn.hasAttribute("data-locked")) return;
+        e.preventDefault();
+        const idx = Number(btn.dataset.answer);
+        if (Number.isInteger(idx)) this.answer(idx);
+      }, { passive: false });
 
       roomRef().on("value", snap => {
         this.room = snap.val();
@@ -360,18 +386,52 @@
         name,
         department,
         joinedAt: now()
+      }).catch(err => {
+        console.error("Join failed:", err);
+        alert("Could not join the quiz: " + (err && err.message ? err.message : err) +
+              "\n\nThe host may need to relax the database rules.");
       });
     },
 
     answer(index) {
-      if (!this.room || this.room.status !== "question") return;
+      if (!this.room) return;
+      if (this.room.status !== "question") return;
       const currentIndex = this.room.currentIndex || 0;
       const answers = this.room.players?.[this.id]?.answers || {};
-      if (answers[currentIndex]) return;
+      if (answers[currentIndex] || this.pendingAnswer !== null) return;
 
-      roomRef(`players/${this.id}/answers/${currentIndex}`).set({
-        answer: index,
-        answeredAt: now()
+      // Optimistic UI: mark immediately so the user sees feedback even
+      // before the Firebase round-trip completes.
+      this.pendingAnswer = index;
+      this.markSelectedLocally(index);
+
+      roomRef(`players/${this.id}/answers/${currentIndex}`)
+        .set({ answer: index, answeredAt: now() })
+        .then(() => {
+          this.pendingAnswer = null;
+        })
+        .catch(err => {
+          console.error("Answer write failed:", err);
+          this.pendingAnswer = null;
+          $("#player-message").textContent =
+            "Could not send your answer. " + (err && err.message ? err.message : "");
+          // Re-enable the buttons so the user can retry.
+          this.unmarkSelectedLocally();
+        });
+    },
+
+    markSelectedLocally(index) {
+      $$("#player-options .option").forEach((btn, i) => {
+        btn.setAttribute("data-locked", "");
+        if (i === index) btn.classList.add("selected");
+      });
+      $("#player-message").textContent = "Answer submitted. Wait for the host.";
+    },
+
+    unmarkSelectedLocally() {
+      $$("#player-options .option").forEach((btn) => {
+        btn.removeAttribute("data-locked");
+        btn.classList.remove("selected");
       });
     },
 
@@ -404,27 +464,44 @@
 
       const playerData = room.players?.[this.id] || {};
       const answered = playerData.answers?.[currentIndex];
+      const isLive = room.status === "question";
+      const locked = !isLive || !!answered || this.pendingAnswer !== null;
+
       $("#player-category").textContent = q.category || "General";
       $("#player-question-number").textContent = `${currentIndex + 1} / ${questions.length}`;
       $("#player-question").textContent = q.question;
       $("#player-timer").textContent = timerText(room);
 
+      // Note: NO `disabled` attribute is written here. We use `data-locked`
+      // instead and check it in the delegated click handler. The `disabled`
+      // HTML attribute blocks pointer events entirely, which made retries
+      // and visual states harder to reason about; `data-locked` keeps the
+      // button interactive at the DOM level while we control gating in JS.
       $("#player-options").innerHTML = q.options.map((option, index) => {
-        const selected = answered && answered.answer === index;
+        const selected = (answered && answered.answer === index) ||
+                         (this.pendingAnswer === index);
         const correct = room.showAnswer && index === q.correctAnswer;
         const wrong = room.showAnswer && selected && index !== q.correctAnswer;
-        const disabled = room.status !== "question" || answered;
+        const lockAttr = locked ? "data-locked" : "";
+        const ariaDisabled = locked ? 'aria-disabled="true"' : "";
+        const cls = [
+          "option",
+          selected ? "selected" : "",
+          correct  ? "correct"  : "",
+          wrong    ? "wrong"    : "",
+          locked && !answered && !correct && !wrong ? "is-waiting" : ""
+        ].filter(Boolean).join(" ");
         return `
-          <button type="button" class="option ${selected ? "selected" : ""} ${correct ? "correct" : ""} ${wrong ? "wrong" : ""}" data-answer="${index}" ${disabled ? "disabled" : ""}>
+          <button type="button" class="${cls}" data-answer="${index}" ${lockAttr} ${ariaDisabled}>
             <span class="letter">${optionLetter(index)}</span>
             <span class="text">${escapeHtml(option)}</span>
           </button>
         `;
       }).join("");
 
-      $$("#player-options .option").forEach(btn => {
-        btn.addEventListener("click", () => this.answer(Number(btn.dataset.answer)));
-      });
+      // Make the "waiting for host" state visually unmistakable on the card.
+      const card = $("#answer-card");
+      if (card) card.classList.toggle("is-waiting", !isLive && !answered);
 
       $("#player-message").textContent = messageForPlayer(room, answered);
     },
@@ -437,6 +514,16 @@
       $("#player-rank").textContent = mine ? `Rank ${scores.findIndex(row => row.id === this.id) + 1}` : "Rank -";
     }
   };
+
+  function reportHostError(action) {
+    return function (err) {
+      console.error(`${action} failed:`, err);
+      const msg = err && err.message ? err.message : String(err);
+      alert(`${action} failed: ${msg}\n\n` +
+            "Check your Firebase Realtime Database rules. For testing you " +
+            "can use { \".read\": true, \".write\": true }.");
+    };
+  }
 
   function statusText(status) {
     if (status === "question") return "Question live";
