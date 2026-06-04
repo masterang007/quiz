@@ -340,28 +340,17 @@
         this.join();
       });
 
-      // Delegated click listener — attached ONCE, survives every re-render.
-      // The per-button listeners used previously were getting wiped out each
-      // time the room snapshot fired (which happens whenever anyone joins,
-      // answers, or the host changes status).
+      // Delegated change listener for the radio inputs — attached ONCE,
+      // survives every re-render. We listen for `change` on the wrapper so
+      // re-rendering the radio markup never tears the listener down.
       const optionsWrap = $("#player-options");
-      optionsWrap.addEventListener("click", (e) => {
-        const btn = e.target.closest(".option");
-        if (!btn || !optionsWrap.contains(btn)) return;
-        if (btn.hasAttribute("data-locked")) return;
-        const idx = Number(btn.dataset.answer);
+      optionsWrap.addEventListener("change", (e) => {
+        const input = e.target;
+        if (!input || input.name !== "player-answer") return;
+        if (optionsWrap.hasAttribute("data-locked")) return;
+        const idx = Number(input.value);
         if (Number.isInteger(idx)) this.answer(idx);
       });
-      // iOS Safari occasionally swallows synthetic clicks on freshly-injected
-      // buttons; touchend gives us a reliable secondary path.
-      optionsWrap.addEventListener("touchend", (e) => {
-        const btn = e.target.closest(".option");
-        if (!btn || !optionsWrap.contains(btn)) return;
-        if (btn.hasAttribute("data-locked")) return;
-        e.preventDefault();
-        const idx = Number(btn.dataset.answer);
-        if (Number.isInteger(idx)) this.answer(idx);
-      }, { passive: false });
 
       roomRef().on("value", snap => {
         this.room = snap.val();
@@ -421,17 +410,29 @@
     },
 
     markSelectedLocally(index) {
-      $$("#player-options .option").forEach((btn, i) => {
-        btn.setAttribute("data-locked", "");
-        if (i === index) btn.classList.add("selected");
+      const wrap = $("#player-options");
+      if (wrap) wrap.setAttribute("data-locked", "");
+      $$("#player-options .option").forEach((label, i) => {
+        const input = label.querySelector("input[type=radio]");
+        if (input) input.disabled = true;
+        if (i === index) {
+          label.classList.add("selected");
+          if (input) input.checked = true;
+        }
       });
       $("#player-message").textContent = "Answer submitted. Wait for the host.";
     },
 
     unmarkSelectedLocally() {
-      $$("#player-options .option").forEach((btn) => {
-        btn.removeAttribute("data-locked");
-        btn.classList.remove("selected");
+      const wrap = $("#player-options");
+      if (wrap) wrap.removeAttribute("data-locked");
+      $$("#player-options .option").forEach((label) => {
+        const input = label.querySelector("input[type=radio]");
+        if (input) {
+          input.disabled = false;
+          input.checked = false;
+        }
+        label.classList.remove("selected");
       });
     },
 
@@ -472,18 +473,18 @@
       $("#player-question").textContent = q.question;
       $("#player-timer").textContent = timerText(room);
 
-      // Note: NO `disabled` attribute is written here. We use `data-locked`
-      // instead and check it in the delegated click handler. The `disabled`
-      // HTML attribute blocks pointer events entirely, which made retries
-      // and visual states harder to reason about; `data-locked` keeps the
-      // button interactive at the DOM level while we control gating in JS.
-      $("#player-options").innerHTML = q.options.map((option, index) => {
+      // Render answer options as radio inputs wrapped in <label>s.
+      // Tapping the radio or the label triggers a `change` event which our
+      // delegated listener on #player-options handles. We disable the radio
+      // itself when the question is locked (waiting for host, already
+      // answered, etc.) so the OS-native radio behaves correctly.
+      const wrap = $("#player-options");
+      wrap.toggleAttribute("data-locked", locked);
+      wrap.innerHTML = q.options.map((option, index) => {
         const selected = (answered && answered.answer === index) ||
                          (this.pendingAnswer === index);
         const correct = room.showAnswer && index === q.correctAnswer;
         const wrong = room.showAnswer && selected && index !== q.correctAnswer;
-        const lockAttr = locked ? "data-locked" : "";
-        const ariaDisabled = locked ? 'aria-disabled="true"' : "";
         const cls = [
           "option",
           selected ? "selected" : "",
@@ -491,11 +492,22 @@
           wrong    ? "wrong"    : "",
           locked && !answered && !correct && !wrong ? "is-waiting" : ""
         ].filter(Boolean).join(" ");
+        const radioId = `opt-${currentIndex}-${index}`;
+        const checkedAttr  = selected ? "checked" : "";
+        const disabledAttr = locked   ? "disabled" : "";
         return `
-          <button type="button" class="${cls}" data-answer="${index}" ${lockAttr} ${ariaDisabled}>
+          <label class="${cls}" for="${radioId}">
+            <input
+              type="radio"
+              id="${radioId}"
+              name="player-answer"
+              value="${index}"
+              ${checkedAttr}
+              ${disabledAttr}
+            />
             <span class="letter">${optionLetter(index)}</span>
             <span class="text">${escapeHtml(option)}</span>
-          </button>
+          </label>
         `;
       }).join("");
 

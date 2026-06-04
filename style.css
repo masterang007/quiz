@@ -464,6 +464,45 @@ input[type="text"]:focus, select:focus {
      the question yet, so users understand why nothing happens on tap. */
 .option[data-locked]            { cursor: default; }
 .option.is-waiting              { opacity: 0.55; }
+
+/* When the player options render as radio <label>s, make the radio input
+   the visual anchor on the left and keep the rest of the row tappable. */
+.option > input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--gray-400);
+  border-radius: 50%;
+  margin: 0;
+  flex-shrink: 0;
+  position: relative;
+  cursor: pointer;
+  background: var(--white);
+  transition: border-color 0.15s, background 0.15s;
+}
+.option > input[type="radio"]:checked {
+  border-color: var(--accent);
+}
+.option > input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.option > input[type="radio"]:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.option.correct > input[type="radio"]          { border-color: var(--green); }
+.option.correct > input[type="radio"]:checked::after { background: var(--green); }
+.option.wrong   > input[type="radio"]          { border-color: var(--red); }
+.option.wrong   > input[type="radio"]:checked::after { background: var(--red); }
+
+/* When the options wrapper is locked, prevent label clicks from toggling
+   the radio (belt-and-braces — the radio itself is also `disabled`). */
+#player-options[data-locked] .option { cursor: default; }
 #answer-card.is-waiting::before {
   content: "Waiting for host to start the question…";
   display: block;
