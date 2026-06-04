@@ -386,54 +386,46 @@
       if (!this.room) return;
       if (this.room.status !== "question") return;
       const currentIndex = this.room.currentIndex || 0;
-      const answers = this.room.players?.[this.id]?.answers || {};
-      if (answers[currentIndex] || this.pendingAnswer !== null) return;
 
-      // Optimistic UI: mark immediately so the user sees feedback even
-      // before the Firebase round-trip completes.
+      // Allow the user to change their mind while the question is still live.
+      // Each tap re-writes the same Firebase node — the final value before
+      // the host moves on (Show Answer / Next Question) is what counts.
       this.pendingAnswer = index;
       this.markSelectedLocally(index);
 
       roomRef(`players/${this.id}/answers/${currentIndex}`)
         .set({ answer: index, answeredAt: now() })
         .then(() => {
-          this.pendingAnswer = null;
+          // Only clear the local pending marker if it still matches this
+          // tap — otherwise a faster subsequent tap would erase its own
+          // marker when its predecessor resolved.
+          if (this.pendingAnswer === index) this.pendingAnswer = null;
         })
         .catch(err => {
           console.error("Answer write failed:", err);
-          this.pendingAnswer = null;
+          if (this.pendingAnswer === index) this.pendingAnswer = null;
           $("#player-message").textContent =
             "Could not send your answer. " + (err && err.message ? err.message : "");
-          // Re-enable the buttons so the user can retry.
-          this.unmarkSelectedLocally();
         });
     },
 
+    /**
+     * Show a local visual selection without locking the radios — users can
+     * still switch to a different option until the host advances.
+     */
     markSelectedLocally(index) {
-      const wrap = $("#player-options");
-      if (wrap) wrap.setAttribute("data-locked", "");
       $$("#player-options .option").forEach((label, i) => {
         const input = label.querySelector("input[type=radio]");
-        if (input) input.disabled = true;
         if (i === index) {
           label.classList.add("selected");
           if (input) input.checked = true;
+        } else {
+          label.classList.remove("selected");
+          if (input) input.checked = false;
         }
       });
-      $("#player-message").textContent = "Answer submitted. Wait for the host.";
-    },
-
-    unmarkSelectedLocally() {
-      const wrap = $("#player-options");
-      if (wrap) wrap.removeAttribute("data-locked");
-      $$("#player-options .option").forEach((label) => {
-        const input = label.querySelector("input[type=radio]");
-        if (input) {
-          input.disabled = false;
-          input.checked = false;
-        }
-        label.classList.remove("selected");
-      });
+      $("#player-message").textContent =
+        "Answer selected. You can change it until the host moves on.";
     },
 
     render() {
@@ -466,7 +458,10 @@
       const playerData = room.players?.[this.id] || {};
       const answered = playerData.answers?.[currentIndex];
       const isLive = room.status === "question";
-      const locked = !isLive || !!answered || this.pendingAnswer !== null;
+      // Users can change their answer freely until the host advances:
+      // the question is "locked" only when it's no longer live or the
+      // host has revealed the correct answer.
+      const locked = !isLive || !!room.showAnswer;
 
       $("#player-category").textContent = q.category || "General";
       $("#player-question-number").textContent = `${currentIndex + 1} / ${questions.length}`;
@@ -559,8 +554,11 @@
   function messageForPlayer(room, answered) {
     if (room.status === "ended") return "Quiz ended. Check your score.";
     if (room.status === "review") return "Answer shown on the host screen.";
-    if (answered) return "Answer submitted. Wait for the host.";
-    if (room.status === "question") return "Choose your answer.";
+    if (room.status === "question") {
+      return answered
+        ? "Answer selected. You can change it until the host moves on."
+        : "Choose your answer.";
+    }
     return "Wait for the host to start the question.";
   }
 
