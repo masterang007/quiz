@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a2540" />
+  <title>Quiz · DCS Awareness</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">DCS</div>
+    <div>
+      <h1>DCS Awareness Quiz</h1>
+      <div class="sub" id="participant-banner">In progress…</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="card">
+        <div class="quiz-header">
+          <div>Question <span id="q-current">1</span> of <span id="q-total">10</span></div>
+          <div class="timer" id="timer" aria-live="polite">20s</div>
+        </div>
+
+        <div class="progress" aria-hidden="true">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="category-tag" id="category-tag">Category</div>
+        <h2 class="question-text" id="question-text">Question text loading…</h2>
+
+        <div class="options" id="options" role="list">
+          <!-- Options injected by script.js -->
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>© DCS Awareness Quiz</footer>
+
+  <script src="questions.js"></script>
+  <script src="script.js"></script>
+  <script>
+    DCSQuiz.quiz.init();
+  </script>
+</body>
+</html>

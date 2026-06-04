@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a2540" />
+  <title>DCS Awareness Quiz</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ============ Top bar ============ -->
+  <header class="topbar">
+    <!-- Logo placeholder: replace text "DCS" with company logo image if available -->
+    <div class="logo" aria-label="Company logo">DCS</div>
+    <div>
+      <h1>DCS Awareness Quiz</h1>
+      <div class="sub">Process Control &amp; Automation Training</div>
+    </div>
+  </header>
+
+  <!-- ============ Main ============ -->
+  <main>
+    <div class="container">
+      <section class="card">
+        <h2>Welcome</h2>
+        <p class="subtitle">
+          Test your knowledge of Distributed Control Systems, field instrumentation,
+          safety, and cybersecurity. The quiz takes about 5 minutes.
+        </p>
+
+        <form id="start-form" novalidate>
+          <label for="participant-name">Full name</label>
+          <input
+            id="participant-name"
+            type="text"
+            maxlength="60"
+            placeholder="e.g. John Smith"
+            autocomplete="name"
+            required
+          />
+
+          <label for="department">Department</label>
+          <select id="department" required>
+            <option value="" disabled selected>Select your department</option>
+            <option value="Operations">Operations</option>
+            <option value="Process">Process</option>
+            <option value="Instrument">Instrument</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Engineering">Engineering</option>
+          </select>
+
+          <div class="hero-meta">
+            <div class="chip"><strong>Questions</strong>10 randomized</div>
+            <div class="chip"><strong>Per Question</strong>20-second timer</div>
+            <div class="chip"><strong>Pass Mark</strong>70%</div>
+            <div class="chip"><strong>Feedback</strong>Instant review</div>
+          </div>
+
+          <div class="btn-row">
+            <button type="submit" class="btn" id="start-btn">Start Quiz</button>
+            <a href="leaderboard.html" class="btn btn-secondary">View Leaderboard</a>
+          </div>
+        </form>
+
+        <!-- QR code section: replace src with your generated QR or keep the placeholder service -->
+        <div class="qr-block">
+          <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https%3A%2F%2Fexample.netlify.app%2F"
+            alt="QR code to access this quiz"
+          />
+          <div class="qr-text">
+            <strong>Scan to access on mobile</strong>
+            Replace the QR target with your deployed URL:
+            <br />
+            <code>https://your-site.netlify.app/</code>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    © DCS Awareness Quiz · Process Control &amp; Automation Training
+  </footer>
+
+  <script src="questions.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // ---- Landing page bootstrap ----
+    DCSQuiz.landing.init();
+  </script>
+</body>
+</html>

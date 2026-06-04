@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a2540" />
+  <title>Leaderboard · DCS Awareness Quiz</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">DCS</div>
+    <div>
+      <h1>DCS Awareness Quiz</h1>
+      <div class="sub">Top 10 Results</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="card">
+        <h2>Leaderboard</h2>
+        <p class="subtitle">Top 10 results on this device (stored locally in your browser).</p>
+
+        <div id="leaderboard-wrap">
+          <table class="lb-table" id="lb-table" style="display:none;">
+            <thead>
+              <tr>
+                <th style="width:60px;">Rank</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th style="width:70px;">Score</th>
+                <th style="width:120px;">Date</th>
+              </tr>
+            </thead>
+            <tbody id="lb-body"></tbody>
+          </table>
+
+          <div class="empty-state" id="lb-empty">
+            No results yet. Be the first to take the quiz!
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <a class="btn" href="index.html">Take the Quiz</a>
+          <button class="btn btn-secondary" id="btn-clear-lb">Clear Leaderboard</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>© DCS Awareness Quiz</footer>
+
+  <script src="script.js"></script>
+  <script>
+    DCSQuiz.leaderboard.init();
+  </script>
+</body>
+</html>

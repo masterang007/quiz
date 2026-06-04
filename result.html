@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a2540" />
+  <title>Results · DCS Awareness Quiz</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">DCS</div>
+    <div>
+      <h1>DCS Awareness Quiz</h1>
+      <div class="sub">Your Results</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="card">
+        <div class="result-hero">
+          <div class="score-circle" id="score-circle" style="--pct: 0%;">
+            <div class="pct-text" id="pct-text">0%</div>
+            <div class="pct-sub">Score</div>
+          </div>
+          <div class="status-banner" id="status-banner">—</div>
+        </div>
+
+        <div class="result-grid">
+          <div class="stat">
+            <div class="label">Name</div>
+            <div class="value" id="r-name">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">Department</div>
+            <div class="value" id="r-dept">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">Score</div>
+            <div class="value" id="r-score">0 / 0</div>
+          </div>
+          <div class="stat">
+            <div class="label">Date</div>
+            <div class="value" id="r-date">—</div>
+          </div>
+        </div>
+
+        <div class="message-banner" id="message-banner">—</div>
+
+        <div class="btn-row">
+          <button class="btn" id="btn-review">Review Answers</button>
+          <a class="btn btn-secondary" href="leaderboard.html">Leaderboard</a>
+        </div>
+        <div class="btn-row">
+          <a class="btn btn-secondary" href="index.html" id="btn-restart">Restart Quiz</a>
+        </div>
+      </section>
+
+      <!-- Review section, toggled by Review Answers button -->
+      <section class="card" id="review-section" style="display:none; margin-top: 16px;">
+        <h2>Answer Review</h2>
+        <p class="subtitle">Correct answers are green, your incorrect answers are red.</p>
+        <div class="review-list" id="review-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer>© DCS Awareness Quiz</footer>
+
+  <script src="questions.js"></script>
+  <script src="script.js"></script>
+  <script>
+    DCSQuiz.result.init();
+  </script>
+</body>
+</html>
