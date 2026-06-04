@@ -11,11 +11,11 @@
    ========================================================================= */
 
 window.FIREBASE_CONFIG = {
-  apiKey: "PASTE_FIREBASE_API_KEY_HERE",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://PASTE_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_MESSAGING_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyDF603kedp9wJmSN1Y1YYotelE_6NFwG2Y", // You need to get this from your Firebase project settings
+  authDomain: "quiz1-aacd8.firebaseapp.com",
+  databaseURL: "https://quiz1-aacd8-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "quiz1-aacd8",
+  storageBucket: "quiz1-aacd8.appspot.com",
+  messagingSenderId: "495122962401",
+  appId: "1:495122962401:web:d6fc7643744dcfe6c9e4a0" // You need to get this from your Firebase project settings
 };
