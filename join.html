@@ -214,13 +214,46 @@
         <span class="timer" id="player-timer">--</span>
       </div>
 
-      <!-- Waiting message (shown when host hasn't started yet) -->
-      <div id="player-waiting-banner" hidden>
-        Waiting for host to start the question…
+      <!-- Waiting screen (shown when no question is active) -->
+      <div id="player-waiting-screen" style="
+        flex:1;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:18px;
+        text-align:center;
+      ">
+        <div style="font-size:56px;">⏳</div>
+        <div style="color:#fff;font-size:22px;font-weight:800;line-height:1.3;">
+          Waiting for host<br>to start the quiz…
+        </div>
+        <div style="color:rgba(255,255,255,0.5);font-size:14px;">
+          Look at the projector screen
+        </div>
+        <div style="
+          width:48px;height:6px;border-radius:999px;
+          background:rgba(255,255,255,0.15);
+          overflow:hidden;
+          margin-top:8px;
+        ">
+          <div style="
+            height:100%;width:40%;border-radius:999px;
+            background:var(--accent);
+            animation:slide 1.4s ease-in-out infinite;
+          "></div>
+        </div>
+        <style>
+          @keyframes slide {
+            0%   { transform: translateX(-100%); }
+            50%  { transform: translateX(150%); }
+            100% { transform: translateX(150%); }
+          }
+        </style>
       </div>
 
-      <!-- A B C D buttons -->
-      <div class="answer-grid" id="player-options">
+      <!-- A B C D buttons (shown only when question is live) -->
+      <div class="answer-grid" id="player-options" hidden>
         <!-- Rendered by live.js -->
       </div>
 

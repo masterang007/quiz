@@ -657,8 +657,11 @@
       const q = questions[currentIndex];
 
       if (!q) {
-        if (el("player-question")) el("player-question").textContent = "Waiting for question.";
-        if (el("player-options")) el("player-options").innerHTML = "";
+        // No question yet — show waiting screen
+        const waitScreen = el("player-waiting-screen");
+        const wrap = el("player-options");
+        if (waitScreen) waitScreen.hidden = false;
+        if (wrap) { wrap.hidden = true; wrap.innerHTML = ""; }
         return;
       }
 
@@ -676,11 +679,14 @@
       // Show chapter name on player screen
       if (el("player-chapter")) el("player-chapter").textContent = room.chapter || "";
 
-      // Show/hide waiting banner
-      const waitBanner = el("player-waiting-banner");
-      if (waitBanner) waitBanner.hidden = isLive || !!answered;
-
+      // Toggle waiting screen vs answer buttons
+      const waitScreen = el("player-waiting-screen");
       const wrap = el("player-options");
+      const showButtons = isLive || room.showAnswer || !!answered;
+      if (waitScreen) waitScreen.hidden = showButtons;
+      if (wrap) wrap.hidden = !showButtons;
+
+      if (!showButtons) return; // nothing more to render while waiting
       if (!wrap) return;
       wrap.toggleAttribute("data-locked", locked);
 
