@@ -1,33 +1,29 @@
 /* =========================================================================
-   DCS Awareness Quiz - Live host/player mode
-   ------------------------------------------------------------------------
-   Uses Firebase Realtime Database so one host screen controls the question
-   while players answer from their phones.
+   DCS Awareness Quiz — Live host/player mode
    ========================================================================= */
-
 (function () {
   "use strict";
 
   const CONFIG = {
     ROOM_ID: "main",
     QUESTION_SECONDS: 20,
-    QUESTIONS_PER_GAME: 10,
     ROOM_KEY: "dcs_live_room_id_v1",
     PLAYER_KEY: "dcs_live_player_id_v1"
   };
 
-  const ROOM_ID = new URLSearchParams(window.location.search).get("room") ||
+  const ROOM_ID =
+    new URLSearchParams(window.location.search).get("room") ||
     localStorage.getItem(CONFIG.ROOM_KEY) ||
     CONFIG.ROOM_ID;
   localStorage.setItem(CONFIG.ROOM_KEY, ROOM_ID);
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const el = id => document.getElementById(id);
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
-    );
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   }
 
   function shuffle(arr) {
@@ -43,74 +39,81 @@
     return String(str).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
   }
 
+  function now() { return Date.now(); }
+
+  function optionLetter(i) { return ["A","B","C","D","E","F"][i] || String(i+1); }
+
   function questionBank() {
-    const bank = window.QUESTIONS || [];
-    return bank.map((q, index) => ({
-      id: `q${index + 1}`,
+    return (window.QUESTIONS || []).map((q, i) => ({
+      id: `q${i+1}`,
       category: q.category || "General",
       question: q.question,
       options: q.options,
       correctAnswer: Number.isInteger(q.correctAnswer) ? q.correctAnswer : q.answer
     })).filter(q =>
-      q.question &&
-      Array.isArray(q.options) &&
-      q.options.length >= 2 &&
-      Number.isInteger(q.correctAnswer)
+      q.question && Array.isArray(q.options) &&
+      q.options.length >= 2 && Number.isInteger(q.correctAnswer)
     );
   }
 
   function buildGameQuestions(chapter) {
     let bank = questionBank();
-    if (chapter && chapter !== "all") {
-      bank = bank.filter(q => q.category === chapter);
-    }
-    const count = Math.min(bank.length, CONFIG.QUESTIONS_PER_GAME);
-    return shuffle(bank).slice(0, count).map((q) => {
-      const paired = q.options.map((text, index) => ({
-        text,
-        isCorrect: index === q.correctAnswer
-      }));
-      const options = shuffle(paired);
+    if (chapter && chapter !== "all") bank = bank.filter(q => q.category === chapter);
+    return shuffle(bank).slice(0, bank.length).map(q => {
+      const paired = q.options.map((text, i) => ({ text, isCorrect: i === q.correctAnswer }));
+      const opts = shuffle(paired);
       return {
         id: q.id,
         category: q.category,
         question: q.question,
-        options: options.map(o => o.text),
-        correctAnswer: options.findIndex(o => o.isCorrect)
+        options: opts.map(o => o.text),
+        correctAnswer: opts.findIndex(o => o.isCorrect)
       };
     });
   }
 
   function firebaseReady() {
-    return window.firebase &&
-      window.FIREBASE_CONFIG &&
+    return window.firebase && window.FIREBASE_CONFIG &&
       !String(window.FIREBASE_CONFIG.apiKey || "").startsWith("PASTE_");
-  }
-
-  function showConfigWarning() {
-    const warning = $("#config-warning");
-    if (warning) warning.hidden = false;
   }
 
   function db() {
     if (!firebaseReady()) {
-      showConfigWarning();
+      const w = el("config-warning");
+      if (w) w.hidden = false;
       return null;
     }
-    if (!firebase.apps.length) {
-      firebase.initializeApp(window.FIREBASE_CONFIG);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
     return firebase.database();
   }
 
-  function roomRef(path = "") {
+  function roomRef(path) {
     const database = db();
     if (!database) return null;
     return database.ref(`rooms/${ROOM_ID}${path ? "/" + path : ""}`);
   }
 
-  function optionLetter(index) {
-    return ["A", "B", "C", "D", "E", "F"][index] || String(index + 1);
+  function scorePlayers(players, questions, excludeIndex = -1) {
+    return Object.entries(players || {}).map(([id, p]) => {
+      let score = 0;
+      const answers = p.answers || {};
+      (questions || []).forEach((q, i) => {
+        if (i === excludeIndex) return;
+        if (answers[i] && answers[i].answer === q.correctAnswer) score++;
+      });
+      return { id, name: p.name || "Player", department: p.department || "", score };
+    }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+  }
+
+  function answerCount(players, index) {
+    return Object.values(players || {})
+      .filter(p => p.answers && p.answers[index]).length;
+  }
+
+  function timerText(room) {
+    if (!room || room.status !== "question" || !room.questionEndsAt) return "--";
+    const left = Math.max(0, Math.ceil((room.questionEndsAt - now()) / 1000));
+    return `${left}s`;
   }
 
   function playerId() {
@@ -122,96 +125,132 @@
     return id;
   }
 
-  function now() {
-    return Date.now();
-  }
-
-  function scorePlayers(players, questions, excludeIndex = -1) {
-    return Object.entries(players || {}).map(([id, player]) => {
-      let score = 0;
-      const answers = player.answers || {};
-      questions.forEach((q, index) => {
-        if (index === excludeIndex) return;
-        if (answers[index] && answers[index].answer === q.correctAnswer) score++;
-      });
-      return {
-        id,
-        name: player.name || "Player",
-        department: player.department || "",
-        score,
-        answered: Object.keys(answers).length
-      };
-    }).sort((a, b) => (b.score - a.score) || a.name.localeCompare(b.name));
-  }
-
+  /* ================================================================
+     HOST
+     ================================================================ */
   const host = {
     room: null,
     timerId: null,
 
     init() {
-      $("#room-code").textContent = ROOM_ID;
-      $("#join-url").textContent = joinUrl();
-      $("#join-qr").src = qrUrl(joinUrl());
+      const url = joinUrl();
+      const qrEl = el("join-qr");
+      const urlEl = el("join-url");
+      if (qrEl) qrEl.src = qrUrl(url);
+      if (urlEl) urlEl.textContent = url;
+      if (el("room-code")) el("room-code").textContent = ROOM_ID;
+
+      // Live timer tick
       setInterval(() => {
-        if (this.room) $("#host-timer").textContent = timerText(this.room);
+        if (this.room && this.room.status === "question") {
+          const t = el("host-timer");
+          if (t) t.textContent = timerText(this.room);
+        }
       }, 500);
 
+      // Chapter selector: populate question preview on change
+      const chapterSel = el("chapter-select");
+      if (chapterSel) {
+        chapterSel.addEventListener("change", () => this.renderQuestionPreview());
+        this.renderQuestionPreview();
+      }
+
       if (!db()) return;
-      this.bindControls();
+
+      // Bind buttons
+      const on = (id, fn) => { const b = el(id); if (b) b.addEventListener("click", fn); };
+      on("btn-start-quiz",     () => this.startQuiz());
+      on("btn-show-answer",    () => this.showAnswer());
+      on("btn-next-question",  () => this.nextQuestion());
+      on("btn-end-game",       () => this.endGame());
+      on("btn-new-game",       () => this.newGame());
+
+      // Ensure a lobby room exists so players can join immediately
+      this.ensureLobby();
+
       roomRef().on("value", snap => {
         this.room = snap.val();
         this.render();
       });
     },
 
-    bindControls() {
-      $("#btn-new-game").addEventListener("click", () => this.newGame());
-      $("#btn-start-question").addEventListener("click", () => this.startQuestion());
-      $("#btn-show-answer").addEventListener("click", () => this.showAnswer());
-      $("#btn-next-question").addEventListener("click", () => this.nextQuestion());
-      $("#btn-end-game").addEventListener("click", () => this.endGame());
+    ensureLobby() {
+      roomRef().once("value").then(snap => {
+        if (!snap.val()) {
+          roomRef().set({
+            status: "lobby",
+            currentIndex: 0,
+            questionStartedAt: null,
+            questionEndsAt: null,
+            showAnswer: false,
+            chapter: null,
+            questions: null,
+            players: {}
+          }).catch(err => console.error("Lobby init:", err));
+        }
+      });
     },
 
-    newGame() {
-      const chapterEl = $("#chapter-select");
-      const chapter = chapterEl ? chapterEl.value : "all";
-      const chapterLabel = chapter === "all"
-        ? "All Chapters"
-        : chapter;
+    // Show questions for the selected chapter in the lobby preview
+    renderQuestionPreview() {
+      const preview = el("question-preview");
+      if (!preview) return;
+      const chapterSel = el("chapter-select");
+      const chapter = chapterSel ? chapterSel.value : "all";
+
+      let bank = questionBank();
+      if (chapter !== "all") bank = bank.filter(q => q.category === chapter);
+
+      if (bank.length === 0) {
+        preview.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0;">No questions found for this chapter.</div>`;
+        return;
+      }
+      preview.innerHTML = `
+        <div class="q-preview-header">${bank.length} questions in this chapter:</div>
+        <ol class="q-preview-list">
+          ${bank.map(q => `<li>${escapeHtml(q.question)}</li>`).join("")}
+        </ol>
+      `;
+    },
+
+    /* ── Game control ──────────────────────────────────── */
+
+    startQuiz() {
+      const chapterSel = el("chapter-select");
+      const chapter = chapterSel ? chapterSel.value : "all";
+      const chapterLabel = chapter === "all" ? "All Chapters" : chapter;
 
       const questions = buildGameQuestions(chapter);
       if (questions.length === 0) {
         alert("No questions found for this chapter. Please check your question bank.");
         return;
       }
-      roomRef().set({
-        status: "lobby",
-        currentIndex: 0,
-        questionStartedAt: null,
-        questionEndsAt: null,
-        showAnswer: false,
-        createdAt: now(),
-        chapter: chapterLabel,
-        questions,
-        players: {}
-      }).catch(reportHostError("Create game"));
-    },
 
-    startQuestion() {
-      if (!this.room || !this.room.questions) return;
       const startedAt = now();
-      roomRef().update({
+      const updates = {
         status: "question",
-        showAnswer: false,
+        currentIndex: 0,
         questionStartedAt: startedAt,
-        questionEndsAt: startedAt + CONFIG.QUESTION_SECONDS * 1000
-      }).catch(reportHostError("Start question"));
+        questionEndsAt: startedAt + CONFIG.QUESTION_SECONDS * 1000,
+        showAnswer: false,
+        chapter: chapterLabel,
+        questions
+      };
+
+      // Clear answers from any previous game without removing player names
+      if (this.room && this.room.players) {
+        Object.keys(this.room.players).forEach(id => {
+          updates[`players/${id}/answers`] = null;
+        });
+      }
+
+      roomRef().update(updates).catch(this.reportError("Start quiz"));
       this.startLocalTimer();
     },
 
     showAnswer() {
       roomRef().update({ status: "review", showAnswer: true })
-        .catch(reportHostError("Show answer"));
+        .catch(this.reportError("Show answer"));
       this.stopLocalTimer();
     },
 
@@ -222,22 +261,37 @@
         this.endGame();
         return;
       }
+      const startedAt = now();
       roomRef().update({
-        status: "lobby",
+        status: "question",
         currentIndex: next,
-        questionStartedAt: null,
-        questionEndsAt: null,
+        questionStartedAt: startedAt,
+        questionEndsAt: startedAt + CONFIG.QUESTION_SECONDS * 1000,
         showAnswer: false
-      }).catch(reportHostError("Next question"));
-      this.stopLocalTimer();
+      }).catch(this.reportError("Next question"));
+      this.startLocalTimer();
     },
 
     endGame() {
       roomRef().update({ status: "ended", showAnswer: true })
-        .catch(reportHostError("End game"));
+        .catch(this.reportError("End game"));
       this.stopLocalTimer();
-      // Save final scores to persistent Firebase leaderboard
-      setTimeout(() => this.saveLeaderboard(), 600);
+      // Save to persistent leaderboard after Firebase propagates
+      setTimeout(() => this.saveLeaderboard(), 800);
+    },
+
+    newGame() {
+      // Return to lobby — keep players so they don't need to re-join
+      roomRef().update({
+        status: "lobby",
+        currentIndex: 0,
+        questionStartedAt: null,
+        questionEndsAt: null,
+        showAnswer: false,
+        chapter: null,
+        questions: null
+      }).catch(this.reportError("New game"));
+      this.stopLocalTimer();
     },
 
     saveLeaderboard() {
@@ -248,181 +302,243 @@
 
       const chapter = room.chapter || "All Chapters";
       const chapterKey = slugify(chapter);
-      const questions = room.questions;
-      const players = room.players;
       const completedAt = now();
-
       const updates = {};
-      Object.entries(players).forEach(([id, player]) => {
-        if (!player.name) return;
+
+      Object.entries(room.players).forEach(([id, p]) => {
+        if (!p.name) return;
         let score = 0;
-        const answers = player.answers || {};
-        questions.forEach((q, index) => {
-          if (answers[index] && answers[index].answer === q.correctAnswer) score++;
+        const answers = p.answers || {};
+        room.questions.forEach((q, i) => {
+          if (answers[i] && answers[i].answer === q.correctAnswer) score++;
         });
-        const recordId = `${completedAt}_${id.slice(0, 8)}`;
-        updates[`leaderboard/${chapterKey}/${recordId}`] = {
-          name: player.name,
-          department: player.department || "",
+        updates[`leaderboard/${chapterKey}/${completedAt}_${id.slice(0,8)}`] = {
+          name: p.name,
+          department: p.department || "",
           score,
-          total: questions.length,
+          total: room.questions.length,
           chapter,
           completedAt
         };
       });
 
-      if (Object.keys(updates).length === 0) return;
-
+      if (!Object.keys(updates).length) return;
       database.ref().update(updates)
-        .then(() => {
-          const saved = $("#host-state");
-          if (saved) {
-            const prev = saved.textContent;
-            saved.textContent = "Scores saved to leaderboard!";
-            setTimeout(() => { saved.textContent = prev; }, 3000);
-          }
-        })
+        .then(() => console.log("Leaderboard saved."))
         .catch(err => console.error("Leaderboard save failed:", err));
     },
 
     startLocalTimer() {
       this.stopLocalTimer();
       this.timerId = setInterval(() => {
-        if (!this.room || !this.room.questionEndsAt) return;
-        if (this.room.questionEndsAt <= now()) {
+        if (this.room && this.room.questionEndsAt && this.room.questionEndsAt <= now()) {
           this.showAnswer();
         }
       }, 500);
     },
-
     stopLocalTimer() {
       if (this.timerId) clearInterval(this.timerId);
       this.timerId = null;
     },
 
+    reportError(action) {
+      return function (err) {
+        console.error(`${action} failed:`, err);
+        alert(`${action} failed: ${err && err.message ? err.message : err}\n\nCheck your Firebase Database rules.`);
+      };
+    },
+
+    /* ── Render ──────────────────────────────────────── */
+
     render() {
       const room = this.room;
-      if (!room) {
-        $("#host-state").textContent = "No live game. Create a new game.";
-        this.renderWaiting();
-        return;
+      const status = room ? room.status : "lobby";
+
+      // Route to correct phase div
+      ["lobby","question","review","ended"].forEach(s => {
+        const phaseEl = el(`${s === "ended" ? "end" : s}-phase`);
+        if (phaseEl) phaseEl.hidden = s !== status;
+      });
+
+      if (!room || status === "lobby") {
+        this.renderLobby(room);
+      } else if (status === "question") {
+        this.startLocalTimer();
+        this.renderQuestionPhase(room);
+      } else if (status === "review") {
+        this.stopLocalTimer();
+        this.renderReviewPhase(room);
+      } else if (status === "ended") {
+        this.renderEndPhase(room);
       }
-      if (room.status === "question") this.startLocalTimer();
-      else this.stopLocalTimer();
-
-      const questions = room.questions || [];
-      const q = questions[room.currentIndex || 0];
-      const players = room.players || {};
-      const scores = scorePlayers(players, questions);
-
-      // Show active chapter badge next to status
-      const chapterText = room.chapter ? ` · ${room.chapter}` : "";
-      $("#host-state").textContent = statusText(room.status) + chapterText;
-
-      $("#player-count").textContent = Object.keys(players).length;
-      $("#answer-count").textContent = answerCount(players, room.currentIndex || 0);
-      $("#question-count").textContent = questions.length;
-      $("#current-number").textContent = Math.min((room.currentIndex || 0) + 1, questions.length || 1);
-
-      // Hide chapter selector while a game is running
-      const chapterRow = $("#chapter-select-row");
-      if (chapterRow) {
-        chapterRow.hidden = room.status !== "lobby" || (room.currentIndex || 0) > 0;
-      }
-
-      this.renderQuestion(q, room);
-      this.renderScores(scores);
-      this.renderControls(room);
     },
 
-    renderWaiting() {
-      $("#host-question").textContent = "Create a game, then ask users to scan the QR code.";
-      $("#host-options").innerHTML = "";
-      $("#scoreboard").innerHTML = "";
-      $("#answer-count").textContent = "0";
-      $("#player-count").textContent = "0";
-      $("#btn-start-question").disabled = true;
-      $("#btn-show-answer").disabled = true;
-      $("#btn-next-question").disabled = true;
-      $("#btn-end-game").disabled = true;
-      const chapterRow = $("#chapter-select-row");
-      if (chapterRow) chapterRow.hidden = false;
-    },
+    renderLobby(room) {
+      const players = room ? (room.players || {}) : {};
+      const entries = Object.values(players).filter(p => p.name);
 
-    renderQuestion(q, room) {
-      if (!q) {
-        this.renderWaiting();
-        return;
-      }
-      $("#host-category").textContent = q.category || "General";
-      $("#host-question").textContent = q.question;
-      $("#host-timer").textContent = timerText(room);
+      const badge = el("player-count-badge");
+      if (badge) badge.textContent = entries.length;
 
-      $("#host-options").innerHTML = q.options.map((option, index) => {
-        const isCorrect = room.showAnswer && index === q.correctAnswer;
-        return `
-          <div class="live-option ${isCorrect ? "correct" : ""}">
-            <span>${optionLetter(index)}</span>
-            <strong>${escapeHtml(option)}</strong>
+      const list = el("player-list-lobby");
+      if (!list) return;
+
+      if (entries.length === 0) {
+        list.innerHTML = `<div class="empty-state" style="padding:14px 0;font-size:13px;">Waiting for players to scan and join…</div>`;
+      } else {
+        list.innerHTML = entries.map(p => `
+          <div class="player-row">
+            <span class="player-dot"></span>
+            <strong>${escapeHtml(p.name)}</strong>
+            <span class="player-dept">${escapeHtml(p.department || "")}</span>
           </div>
-        `;
-      }).join("");
+        `).join("");
+      }
     },
 
-    renderScores(scores) {
-      const wrap = $("#scoreboard");
+    renderQuestionPhase(room) {
+      const q = (room.questions || [])[room.currentIndex || 0];
+      if (!q) return;
+
+      const idx = room.currentIndex || 0;
+      const total = room.questions.length;
+      const answered = answerCount(room.players || {}, idx);
+      const playerCount = Object.keys(room.players || {}).length;
+
+      if (el("host-category")) el("host-category").textContent = q.category;
+      if (el("q-progress")) el("q-progress").textContent = `Question ${idx + 1} / ${total}`;
+      if (el("host-timer")) el("host-timer").textContent = timerText(room);
+      if (el("host-question")) el("host-question").textContent = q.question;
+      if (el("answer-count-text")) el("answer-count-text").textContent = `${answered} / ${playerCount} players answered`;
+
+      if (el("host-options")) {
+        el("host-options").innerHTML = q.options.map((opt, i) => `
+          <div class="live-option">
+            <span>${optionLetter(i)}</span>
+            <strong>${escapeHtml(opt)}</strong>
+          </div>
+        `).join("");
+      }
+
+      this.renderScores(scorePlayers(room.players || {}, room.questions), "scoreboard-live");
+    },
+
+    renderReviewPhase(room) {
+      const q = (room.questions || [])[room.currentIndex || 0];
+      if (!q) return;
+
+      const idx = room.currentIndex || 0;
+      const total = room.questions.length;
+      const isLast = idx >= total - 1;
+
+      if (el("review-category")) el("review-category").textContent = q.category;
+      if (el("review-progress")) el("review-progress").textContent = `Question ${idx + 1} / ${total}`;
+      if (el("review-question")) el("review-question").textContent = q.question;
+
+      if (el("review-options")) {
+        el("review-options").innerHTML = q.options.map((opt, i) => {
+          const correct = i === q.correctAnswer;
+          return `
+            <div class="live-option ${correct ? "correct" : ""}">
+              <span>${optionLetter(i)}</span>
+              <strong>${escapeHtml(opt)}</strong>
+            </div>
+          `;
+        }).join("");
+      }
+
+      const nextBtn = el("btn-next-question");
+      if (nextBtn) nextBtn.textContent = isLast ? "Show Final Scores" : "Next Question →";
+
+      this.renderScores(scorePlayers(room.players || {}, room.questions), "scoreboard-review");
+    },
+
+    renderEndPhase(room) {
+      const chapter = room.chapter || "";
+      if (el("chapter-name-end")) {
+        el("chapter-name-end").textContent = chapter ? `Chapter: ${chapter}` : "";
+      }
+
+      const scores = scorePlayers(room.players || {}, room.questions || []);
+      const total = room.questions ? room.questions.length : "?";
+      const medals = ["🥇","🥈","🥉"];
+      const finalEl = el("final-scoreboard");
+      if (!finalEl) return;
+
       if (scores.length === 0) {
-        wrap.innerHTML = `<div class="empty-state">Waiting for players to join.</div>`;
+        finalEl.innerHTML = `<div class="empty-state">No players completed the quiz.</div>`;
         return;
       }
-      wrap.innerHTML = scores.slice(0, 10).map((row, index) => `
+
+      finalEl.innerHTML = `<div class="final-scores-list">` +
+        scores.map((p, i) => {
+          const pct = total > 0 ? Math.round((p.score / total) * 100) : 0;
+          return `
+            <div class="final-score-row ${i === 0 ? "winner" : ""}">
+              <span class="medal">${medals[i] || i + 1}</span>
+              <span class="f-name">${escapeHtml(p.name)}</span>
+              <span class="f-dept">${escapeHtml(p.department)}</span>
+              <span class="f-score">${p.score} / ${total}</span>
+              <span class="f-pct">${pct}%</span>
+            </div>
+          `;
+        }).join("") + `</div>`;
+    },
+
+    renderScores(scores, containerId) {
+      const wrap = el(containerId);
+      if (!wrap) return;
+      if (scores.length === 0) {
+        wrap.innerHTML = `<div class="empty-state" style="padding:10px 0;font-size:13px;">No players yet.</div>`;
+        return;
+      }
+      wrap.innerHTML = scores.slice(0, 8).map((row, i) => `
         <div class="score-row">
-          <span class="rank-medal">${index + 1}</span>
+          <span class="rank-medal">${i + 1}</span>
           <span>${escapeHtml(row.name)}</span>
           <strong>${row.score}</strong>
         </div>
       `).join("");
-    },
-
-    renderControls(room) {
-      $("#btn-start-question").disabled = room.status === "question" || room.status === "ended";
-      $("#btn-show-answer").disabled = room.status !== "question";
-      $("#btn-next-question").disabled = !["review", "lobby"].includes(room.status);
-      $("#btn-end-game").disabled = room.status === "ended";
     }
   };
 
+  /* ================================================================
+     PLAYER
+     ================================================================ */
   const player = {
     room: null,
     id: playerId(),
     pendingAnswer: null,
 
     init() {
-      $("#room-code").textContent = ROOM_ID;
+      if (el("room-code")) el("room-code").textContent = ROOM_ID;
+
       setInterval(() => {
-        if (this.room) $("#player-timer").textContent = timerText(this.room);
+        if (this.room && el("player-timer")) {
+          el("player-timer").textContent = timerText(this.room);
+        }
       }, 500);
 
       if (!db()) return;
 
       const savedName = localStorage.getItem(`${CONFIG.PLAYER_KEY}_name`) || "";
       const savedDept = localStorage.getItem(`${CONFIG.PLAYER_KEY}_dept`) || "";
-      $("#player-name").value = savedName;
-      $("#player-department").value = savedDept;
+      if (el("player-name")) el("player-name").value = savedName;
+      if (el("player-department")) el("player-department").value = savedDept;
 
-      $("#join-form").addEventListener("submit", (e) => {
-        e.preventDefault();
-        this.join();
-      });
+      const joinForm = el("join-form");
+      if (joinForm) joinForm.addEventListener("submit", e => { e.preventDefault(); this.join(); });
 
-      const optionsWrap = $("#player-options");
-      optionsWrap.addEventListener("change", (e) => {
-        const input = e.target;
-        if (!input || input.name !== "player-answer") return;
-        if (optionsWrap.hasAttribute("data-locked")) return;
-        const idx = Number(input.value);
-        if (Number.isInteger(idx)) this.answer(idx);
-      });
+      const optionsWrap = el("player-options");
+      if (optionsWrap) {
+        optionsWrap.addEventListener("change", e => {
+          const input = e.target;
+          if (!input || input.name !== "player-answer") return;
+          if (optionsWrap.hasAttribute("data-locked")) return;
+          const idx = Number(input.value);
+          if (Number.isInteger(idx)) this.answer(idx);
+        });
+      }
 
       roomRef().on("value", snap => {
         this.room = snap.val();
@@ -431,77 +547,51 @@
     },
 
     join() {
-      const name = $("#player-name").value.trim();
-      const department = $("#player-department").value;
-      if (!name) {
-        alert("Please enter your name.");
-        return;
-      }
-      if (!department) {
-        alert("Please select your department.");
-        return;
-      }
+      const name = (el("player-name") && el("player-name").value.trim()) || "";
+      const department = (el("player-department") && el("player-department").value) || "";
+      if (!name) { alert("Please enter your name."); return; }
+      if (!department) { alert("Please select your department."); return; }
       localStorage.setItem(`${CONFIG.PLAYER_KEY}_name`, name);
       localStorage.setItem(`${CONFIG.PLAYER_KEY}_dept`, department);
-      roomRef(`players/${this.id}`).update({
-        name,
-        department,
-        joinedAt: now()
-      }).catch(err => {
-        console.error("Join failed:", err);
-        alert("Could not join the quiz: " + (err && err.message ? err.message : err) +
-              "\n\nThe host may need to relax the database rules.");
-      });
+      roomRef(`players/${this.id}`).update({ name, department, joinedAt: now() })
+        .catch(err => alert("Could not join: " + (err && err.message ? err.message : err)));
     },
 
     answer(index) {
-      if (!this.room) return;
-      if (this.room.status !== "question") return;
+      if (!this.room || this.room.status !== "question") return;
       const currentIndex = this.room.currentIndex || 0;
-
       this.pendingAnswer = index;
       this.markSelectedLocally(index);
-
       roomRef(`players/${this.id}/answers/${currentIndex}`)
         .set({ answer: index, answeredAt: now() })
-        .then(() => {
-          if (this.pendingAnswer === index) this.pendingAnswer = null;
-        })
+        .then(() => { if (this.pendingAnswer === index) this.pendingAnswer = null; })
         .catch(err => {
-          console.error("Answer write failed:", err);
           if (this.pendingAnswer === index) this.pendingAnswer = null;
-          $("#player-message").textContent =
-            "Could not send your answer. " + (err && err.message ? err.message : "");
+          if (el("player-message")) el("player-message").textContent =
+            "Could not send answer. " + (err && err.message ? err.message : "");
         });
     },
 
     markSelectedLocally(index) {
       $$("#player-options .option").forEach((label, i) => {
         const input = label.querySelector("input[type=radio]");
-        if (i === index) {
-          label.classList.add("selected");
-          if (input) input.checked = true;
-        } else {
-          label.classList.remove("selected");
-          if (input) input.checked = false;
-        }
+        label.classList.toggle("selected", i === index);
+        if (input) input.checked = (i === index);
       });
-      $("#player-message").textContent =
+      if (el("player-message")) el("player-message").textContent =
         "Answer selected. You can change it until the host moves on.";
     },
 
     render() {
       const room = this.room;
       if (!room) {
-        $("#player-state").textContent = "Waiting for host to create a game.";
+        if (el("player-state")) el("player-state").textContent = "Waiting for host to create a game.";
         return;
       }
-
       const joined = !!room.players?.[this.id];
-      $("#join-card").hidden = joined;
-      $("#answer-card").hidden = !joined;
-      $("#player-state").textContent = statusText(room.status);
-
+      if (el("join-card")) el("join-card").hidden = joined;
+      if (el("answer-card")) el("answer-card").hidden = !joined;
+      if (el("player-state")) el("player-state").textContent = statusText(room.status);
       if (!joined) return;
       this.renderQuestion(room);
       this.renderPlayerScore(room);
@@ -511,9 +601,10 @@
       const questions = room.questions || [];
       const currentIndex = room.currentIndex || 0;
       const q = questions[currentIndex];
+
       if (!q) {
-        $("#player-question").textContent = "Waiting for question.";
-        $("#player-options").innerHTML = "";
+        if (el("player-question")) el("player-question").textContent = "Waiting for question.";
+        if (el("player-options")) el("player-options").innerHTML = "";
         return;
       }
 
@@ -522,105 +613,71 @@
       const isLive = room.status === "question";
       const locked = !isLive || !!room.showAnswer;
 
-      $("#player-category").textContent = q.category || "General";
-      $("#player-question-number").textContent = `${currentIndex + 1} / ${questions.length}`;
-      $("#player-question").textContent = q.question;
-      $("#player-timer").textContent = timerText(room);
+      if (el("player-category")) el("player-category").textContent = q.category || "General";
+      if (el("player-question-number"))
+        el("player-question-number").textContent = `${currentIndex + 1} / ${questions.length}`;
+      if (el("player-question")) el("player-question").textContent = q.question;
+      if (el("player-timer")) el("player-timer").textContent = timerText(room);
 
-      // Show chapter name if available
-      const chapterEl = $("#player-chapter");
-      if (chapterEl) chapterEl.textContent = room.chapter || "";
+      // Show chapter name on player screen
+      if (el("player-chapter")) el("player-chapter").textContent = room.chapter || "";
 
-      const wrap = $("#player-options");
+      const wrap = el("player-options");
+      if (!wrap) return;
       wrap.toggleAttribute("data-locked", locked);
       wrap.innerHTML = q.options.map((option, index) => {
-        const selected = (answered && answered.answer === index) ||
-                         (this.pendingAnswer === index);
+        const selected = (answered && answered.answer === index) || (this.pendingAnswer === index);
         const correct = room.showAnswer && index === q.correctAnswer;
         const wrong = room.showAnswer && selected && index !== q.correctAnswer;
-        const cls = [
-          "option",
-          selected ? "selected" : "",
-          correct  ? "correct"  : "",
-          wrong    ? "wrong"    : "",
-          locked && !answered && !correct && !wrong ? "is-waiting" : ""
-        ].filter(Boolean).join(" ");
+        const cls = ["option", selected?"selected":"", correct?"correct":"", wrong?"wrong":"",
+          locked && !answered && !correct && !wrong ? "is-waiting" : ""].filter(Boolean).join(" ");
         const radioId = `opt-${currentIndex}-${index}`;
-        const checkedAttr  = selected ? "checked" : "";
-        const disabledAttr = locked   ? "disabled" : "";
         return `
           <label class="${cls}" for="${radioId}">
-            <input
-              type="radio"
-              id="${radioId}"
-              name="player-answer"
-              value="${index}"
-              ${checkedAttr}
-              ${disabledAttr}
-            />
+            <input type="radio" id="${radioId}" name="player-answer" value="${index}"
+              ${selected?"checked":""} ${locked?"disabled":""} />
             <span class="letter">${optionLetter(index)}</span>
             <span class="text">${escapeHtml(option)}</span>
           </label>
         `;
       }).join("");
 
-      const card = $("#answer-card");
+      const card = el("answer-card");
       if (card) card.classList.toggle("is-waiting", !isLive && !answered);
-
-      $("#player-message").textContent = messageForPlayer(room, answered);
+      if (el("player-message")) el("player-message").textContent = messageForPlayer(room, answered);
     },
 
     renderPlayerScore(room) {
       const questions = room.questions || [];
-      // Don't count the current question while it is still live —
-      // players should not see if their answer was right before the host reveals.
       const hideCurrent = room.status === "question" && !room.showAnswer;
       const excludeIndex = hideCurrent ? (room.currentIndex || 0) : -1;
       const scores = scorePlayers(room.players || {}, questions, excludeIndex);
-      const mine = scores.find(row => row.id === this.id);
-      $("#player-score").textContent = mine ? `${mine.score} point${mine.score === 1 ? "" : "s"}` : "0 points";
-      $("#player-rank").textContent = mine ? `Rank ${scores.findIndex(row => row.id === this.id) + 1}` : "Rank -";
+      const mine = scores.find(r => r.id === this.id);
+      if (el("player-score"))
+        el("player-score").textContent = mine ? `${mine.score} point${mine.score === 1 ? "" : "s"}` : "0 points";
+      if (el("player-rank")) {
+        const rank = mine ? scores.findIndex(r => r.id === this.id) + 1 : "-";
+        el("player-rank").textContent = `Rank ${rank}`;
+      }
     }
   };
 
-  function reportHostError(action) {
-    return function (err) {
-      console.error(`${action} failed:`, err);
-      const msg = err && err.message ? err.message : String(err);
-      alert(`${action} failed: ${msg}\n\n` +
-            "Check your Firebase Realtime Database rules. For testing you " +
-            "can use { \".read\": true, \".write\": true }.");
-    };
-  }
+  /* ── Helpers ─────────────────────────────────────────── */
 
   function statusText(status) {
     if (status === "question") return "Question live";
     if (status === "review") return "Reviewing answer";
-    if (status === "ended") return "Game ended";
-    return "Lobby";
-  }
-
-  function answerCount(players, index) {
-    return Object.values(players || {}).filter(player =>
-      player.answers && player.answers[index]
-    ).length;
-  }
-
-  function timerText(room) {
-    if (!room || room.status !== "question" || !room.questionEndsAt) return "--";
-    const left = Math.max(0, Math.ceil((room.questionEndsAt - now()) / 1000));
-    return `${left}s`;
+    if (status === "ended") return "Quiz ended";
+    return "Lobby — waiting to start";
   }
 
   function messageForPlayer(room, answered) {
-    if (room.status === "ended") return "Quiz ended. Check your score.";
-    if (room.status === "review") return "Answer shown on the host screen.";
+    if (room.status === "ended") return "Quiz ended. Check the host screen for your results!";
+    if (room.status === "review") return "Answer revealed — see the host screen.";
     if (room.status === "question") {
-      return answered
-        ? "Answer selected. You can change it until the host moves on."
-        : "Choose your answer.";
+      return answered ? "Answer selected. You can change it until the host moves on." : "Choose your answer.";
     }
-    return "Wait for the host to start the question.";
+    return "Wait for the host to start the quiz.";
   }
 
   function joinUrl() {
@@ -631,8 +688,5 @@
     return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
   }
 
-  window.DCSLiveQuiz = {
-    host,
-    player
-  };
+  window.DCSLiveQuiz = { host, player };
 })();

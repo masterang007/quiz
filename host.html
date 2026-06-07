@@ -7,39 +7,233 @@
   <title>Live Host · DCS Awareness Quiz</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    .chapter-select-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 22px;
-      padding: 14px 16px;
-      background: var(--gray-50);
-      border: 1px solid var(--gray-200);
-      border-radius: 10px;
-      flex-wrap: wrap;
+    /* ── Host-specific layout ───────────────────────── */
+    .host-phase { width: 100%; }
+
+    /* LOBBY */
+    .lobby-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 18px;
+      align-items: start;
     }
-    .chapter-select-row label {
-      margin: 0;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--navy-700);
-      white-space: nowrap;
+    .host-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
     }
-    .chapter-select-row select {
-      flex: 1;
-      min-width: 200px;
-      padding: 9px 12px;
+    .host-card h3 {
+      margin: 0 0 14px;
       font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--navy-700);
     }
-    .active-chapter-badge {
-      display: inline-block;
-      background: var(--navy-700);
-      color: #fff;
-      border-radius: 999px;
-      padding: 4px 14px;
+
+    /* Chapter selector */
+    .chapter-select-wrap select {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .q-preview-header {
       font-size: 13px;
       font-weight: 700;
+      color: var(--gray-700);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .q-preview-list {
+      margin: 0;
+      padding-left: 20px;
+      display: grid;
+      gap: 8px;
+    }
+    .q-preview-list li {
+      font-size: 14px;
+      color: var(--ink);
+      padding: 8px 10px;
+      background: var(--gray-50);
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      list-style: none;
+      margin: 0;
+      padding-left: 12px;
+    }
+    .q-preview-list li::before {
+      content: "Q" counter(li) " · ";
+      counter-increment: li;
+      font-weight: 800;
+      color: var(--navy-700);
+    }
+    .q-preview-list { counter-reset: li; }
+
+    /* Player list in lobby */
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--gray-100);
+      font-size: 14px;
+    }
+    .player-row:last-child { border-bottom: none; }
+    .player-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+    .player-dept {
+      color: var(--gray-700);
+      font-size: 12px;
+      margin-left: auto;
+    }
+    .player-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
       margin-left: 8px;
+    }
+
+    /* Start Quiz button */
+    .btn-start-quiz {
+      width: 100%;
+      padding: 18px;
+      font-size: 20px;
+      font-weight: 900;
+      background: var(--green);
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+    .btn-start-quiz:hover { background: #178a47; }
+
+    /* Join QR */
+    .join-qr-img {
+      display: block;
+      width: 160px;
+      height: 160px;
+      margin: 0 auto 10px;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+    }
+    .join-url-code {
+      display: block;
+      word-break: break-all;
+      font-size: 12px;
+      text-align: center;
+      color: var(--gray-700);
+      margin-top: 4px;
+    }
+
+    /* QUESTION / REVIEW phase */
+    .host-game-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 18px;
+      align-items: start;
+    }
+    .host-game-main {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      min-height: calc(100vh - 160px);
+    }
+    .q-status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .q-meta { color: var(--gray-700); font-weight: 700; font-size: 15px; }
+    .q-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 18px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .answer-count-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gray-700);
+    }
+    .btn-show-answer { min-width: 160px; font-size: 16px; }
+    .btn-next { min-width: 200px; font-size: 16px; }
+    .btn-row-inline { display: flex; gap: 10px; }
+
+    /* END phase */
+    .end-layout {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 36px;
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .end-layout h2 {
+      font-size: 36px;
+      margin: 0 0 6px;
+      color: var(--navy-900);
+    }
+    .end-chapter-label {
+      color: var(--gray-700);
+      font-size: 15px;
+      margin-bottom: 28px;
+    }
+    .final-scores-list { text-align: left; margin-bottom: 24px; }
+    .final-score-row {
+      display: grid;
+      grid-template-columns: 44px 1fr 120px 80px 60px;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 10px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      font-size: 15px;
+    }
+    .final-score-row.winner {
+      background: #fffbea;
+      border-color: #ffd54a;
+      font-size: 16px;
+    }
+    .medal { font-size: 24px; text-align: center; }
+    .f-name { font-weight: 800; color: var(--navy-900); }
+    .f-dept { font-size: 13px; color: var(--gray-700); }
+    .f-score { font-weight: 800; text-align: right; }
+    .f-pct { font-weight: 700; color: var(--accent); text-align: right; }
+
+    /* Config warning */
+    .config-banner {
+      background: var(--red-bg);
+      color: var(--red);
+      border: 1px solid var(--red);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    @media (max-width: 960px) {
+      .lobby-grid, .host-game-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -47,72 +241,132 @@
   <header class="topbar">
     <div class="logo">DCS</div>
     <div>
-      <h1>Live DCS Awareness Quiz</h1>
-      <div class="sub">Host Screen · Room <span id="room-code">main</span></div>
+      <h1>Live Host · DCS Awareness Quiz</h1>
+      <div class="sub">Room: <strong id="room-code">main</strong></div>
     </div>
   </header>
 
-  <main class="live-main">
-    <section class="live-stage">
-      <div class="live-status-row">
-        <span class="category-tag" id="host-category">Live Quiz</span>
-        <span class="timer" id="host-timer">--</span>
+  <main style="padding:18px 16px 60px; flex:1;">
+
+    <div id="config-warning" class="config-banner" hidden>
+      Firebase is not configured. Edit <code>firebase-config.js</code> with your Firebase project credentials.
+    </div>
+
+    <!-- ══════════════════ LOBBY ══════════════════ -->
+    <div id="lobby-phase" class="host-phase">
+      <div class="lobby-grid">
+
+        <!-- Left: Chapter + Question Preview -->
+        <div>
+          <div class="host-card chapter-select-wrap" style="margin-bottom:16px;">
+            <h3>Select Chapter</h3>
+            <select id="chapter-select">
+              <option value="all">All Chapters (Mixed)</option>
+            </select>
+            <div id="question-preview"></div>
+          </div>
+        </div>
+
+        <!-- Right: QR + Players + Start button -->
+        <div style="display:grid;gap:14px;">
+
+          <div class="host-card" style="text-align:center;">
+            <h3>Players Join Here</h3>
+            <img class="join-qr-img" id="join-qr" alt="QR code" />
+            <code class="join-url-code" id="join-url"></code>
+          </div>
+
+          <div class="host-card">
+            <h3>
+              Players Joined
+              <span class="player-count-badge" id="player-count-badge">0</span>
+            </h3>
+            <div id="player-list-lobby">
+              <div class="empty-state" style="padding:16px 0;font-size:13px;">
+                Waiting for players to scan and join…
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-start-quiz" id="btn-start-quiz">▶ Start Quiz</button>
+
+          <a href="leaderboard.html" class="btn btn-secondary" style="text-align:center;font-size:14px;padding:10px;">
+            View Chapter Leaderboard
+          </a>
+        </div>
+
       </div>
+    </div>
 
-      <div class="live-meta">
-        <span id="host-state">Lobby</span>
-        <span>Question <strong id="current-number">1</strong> / <strong id="question-count">0</strong></span>
-        <span>Players <strong id="player-count">0</strong></span>
-        <span>Answers <strong id="answer-count">0</strong></span>
+    <!-- ══════════════════ QUESTION (live) ══════════════════ -->
+    <div id="question-phase" class="host-phase" hidden>
+      <div class="host-game-grid">
+        <div class="host-game-main">
+          <div class="q-status-row">
+            <span class="category-tag" id="host-category">Category</span>
+            <span class="q-meta" id="q-progress">Q 1 / 5</span>
+            <span class="timer" id="host-timer">--</span>
+          </div>
+          <h2 class="live-question" id="host-question"></h2>
+          <div class="live-options" id="host-options"></div>
+          <div class="q-controls">
+            <span class="answer-count-label" id="answer-count-text">0 answered</span>
+            <button class="btn btn-show-answer" id="btn-show-answer">Show Answer</button>
+          </div>
+        </div>
+        <div style="display:grid;gap:14px;">
+          <div class="host-card">
+            <h3>Live Scores</h3>
+            <div id="scoreboard-live"></div>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <h2 class="live-question" id="host-question">Create a game, then ask users to scan the QR code.</h2>
-      <div class="live-options" id="host-options"></div>
-
-      <!-- Chapter selector — shown when in lobby / before starting -->
-      <div class="chapter-select-row" id="chapter-select-row">
-        <label for="chapter-select">Select chapter:</label>
-        <select id="chapter-select">
-          <option value="all">All Chapters (Mixed)</option>
-          <!-- Options populated by live.js after questions load -->
-        </select>
+    <!-- ══════════════════ REVIEW (answer revealed) ══════════════════ -->
+    <div id="review-phase" class="host-phase" hidden>
+      <div class="host-game-grid">
+        <div class="host-game-main">
+          <div class="q-status-row">
+            <span class="category-tag" id="review-category">Category</span>
+            <span class="q-meta" id="review-progress">Q 1 / 5</span>
+            <span class="timer" style="opacity:0.4;">--</span>
+          </div>
+          <h2 class="live-question" id="review-question"></h2>
+          <div class="live-options" id="review-options"></div>
+          <div class="q-controls">
+            <div></div>
+            <div class="btn-row-inline">
+              <button class="btn btn-secondary" id="btn-end-game" style="min-width:120px;">End Quiz</button>
+              <button class="btn btn-next" id="btn-next-question">Next Question →</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;gap:14px;">
+          <div class="host-card">
+            <h3>Updated Scores</h3>
+            <div id="scoreboard-review"></div>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <div class="host-controls">
-        <button class="btn" id="btn-new-game">New Game</button>
-        <button class="btn" id="btn-start-question">Start Question</button>
-        <button class="btn btn-secondary" id="btn-show-answer">Show Answer</button>
-        <button class="btn btn-secondary" id="btn-next-question">Next Question</button>
-        <button class="btn btn-secondary" id="btn-end-game">End</button>
+    <!-- ══════════════════ END ══════════════════ -->
+    <div id="end-phase" class="host-phase" hidden>
+      <div class="end-layout">
+        <h2>Quiz Complete! 🎉</h2>
+        <div class="end-chapter-label" id="chapter-name-end"></div>
+        <div id="final-scoreboard"></div>
+        <div class="btn-row" style="justify-content:center;">
+          <button class="btn" id="btn-new-game" style="max-width:200px;">New Game</button>
+          <a class="btn btn-secondary" href="leaderboard.html" style="max-width:220px;">View Leaderboard</a>
+        </div>
       </div>
-    </section>
+    </div>
 
-    <aside class="live-side">
-      <section class="card compact-card">
-        <h2>Join</h2>
-        <img class="join-qr" id="join-qr" alt="QR code for players to join" />
-        <p class="subtitle">Players scan this QR code.</p>
-        <code id="join-url">Loading...</code>
-      </section>
-
-      <section class="card compact-card">
-        <h2>Scores</h2>
-        <div id="scoreboard"></div>
-      </section>
-
-      <section class="card compact-card" style="text-align:center;">
-        <a href="leaderboard.html" class="btn" style="font-size:14px;padding:10px 14px;">
-          View Chapter Leaderboard
-        </a>
-      </section>
-
-      <section class="message-banner" id="config-warning" hidden>
-        Firebase is not configured. Paste your Firebase config into firebase-config.js.
-      </section>
-    </aside>
   </main>
 
-  <footer>© DCS Awareness Quiz</footer>
+  <footer>© DCS Awareness Quiz · Host Screen</footer>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -134,7 +388,6 @@
         }
       });
     })();
-
     DCSLiveQuiz.host.init();
   </script>
 </body>
