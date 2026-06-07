@@ -660,7 +660,7 @@
         // No question yet — show waiting screen
         const waitScreen = el("player-waiting-screen");
         const wrap = el("player-options");
-        if (waitScreen) waitScreen.hidden = false;
+        if (waitScreen) waitScreen.style.display = "flex";
         if (wrap) { wrap.hidden = true; wrap.innerHTML = ""; }
         return;
       }
@@ -680,10 +680,11 @@
       if (el("player-chapter")) el("player-chapter").textContent = room.chapter || "";
 
       // Toggle waiting screen vs answer buttons
+      // Note: waitScreen has inline display:flex so we must use style.display, not hidden attribute
       const waitScreen = el("player-waiting-screen");
       const wrap = el("player-options");
       const showButtons = isLive || room.showAnswer || !!answered;
-      if (waitScreen) waitScreen.hidden = showButtons;
+      if (waitScreen) waitScreen.style.display = showButtons ? "none" : "flex";
       if (wrap) wrap.hidden = !showButtons;
 
       if (!showButtons) return; // nothing more to render while waiting
