@@ -59,7 +59,7 @@
   function buildGameQuestions(chapter) {
     let bank = questionBank();
     if (chapter && chapter !== "all") bank = bank.filter(q => q.category === chapter);
-    return shuffle(bank).slice(0, bank.length).map(q => {
+    return shuffle(bank).map(q => {
       const paired = q.options.map((text, i) => ({ text, isCorrect: i === q.correctAnswer }));
       const opts = shuffle(paired);
       return {
@@ -133,6 +133,16 @@
     return `${left}s`;
   }
 
+  // Updates timer element text AND color class (warn ≤30s, crit ≤10s)
+  function updateTimerEl(timerEl, room) {
+    if (!timerEl) return;
+    const isActive = room && room.status === "question" && room.questionEndsAt;
+    const left = isActive ? Math.max(0, Math.ceil((room.questionEndsAt - now()) / 1000)) : null;
+    timerEl.textContent = left !== null ? `${left}s` : "--";
+    timerEl.classList.toggle("warn", left !== null && left <= 30 && left > 10);
+    timerEl.classList.toggle("crit", left !== null && left <= 10);
+  }
+
   function playerId() {
     let id = localStorage.getItem(CONFIG.PLAYER_KEY);
     if (!id) {
@@ -160,8 +170,7 @@
       // Live timer tick
       setInterval(() => {
         if (this.room && this.room.status === "question") {
-          const t = el("host-timer");
-          if (t) t.textContent = timerText(this.room);
+          updateTimerEl(el("host-timer"), this.room);
         }
       }, 500);
 
@@ -386,6 +395,7 @@
       this.stopLocalTimer();
       this.timerId = setInterval(() => {
         if (this.room && this.room.questionEndsAt && this.room.questionEndsAt <= now()) {
+          this.stopLocalTimer(); // stop before calling to prevent double-fire
           this.showAnswer();
         }
       }, 500);
@@ -461,7 +471,7 @@
 
       if (el("host-category")) el("host-category").textContent = q.category;
       if (el("q-progress")) el("q-progress").textContent = `Question ${idx + 1} / ${total}`;
-      if (el("host-timer")) el("host-timer").textContent = timerText(room);
+      updateTimerEl(el("host-timer"), room);
       if (el("host-question")) el("host-question").textContent = q.question;
       if (el("answer-count-text")) el("answer-count-text").textContent = `${answered} / ${playerCount} players answered`;
 
@@ -568,9 +578,7 @@
       if (el("room-code")) el("room-code").textContent = ROOM_ID;
 
       setInterval(() => {
-        if (this.room && el("player-timer")) {
-          el("player-timer").textContent = timerText(this.room);
-        }
+        updateTimerEl(el("player-timer"), this.room);
       }, 500);
 
       if (!db()) return;
@@ -657,11 +665,22 @@
       const q = questions[currentIndex];
 
       if (!q) {
-        // No question yet — show waiting screen
-        const waitScreen = el("player-waiting-screen");
-        const wrap = el("player-options");
-        if (waitScreen) waitScreen.style.display = "flex";
-        if (wrap) { wrap.hidden = true; wrap.innerHTML = ""; }
+        // Lobby — no questions loaded yet
+        if (el("waiting-title")) el("waiting-title").innerHTML = "Waiting for host<br>to start the quiz…";
+        if (el("waiting-subtitle")) el("waiting-subtitle").textContent = "Look at the projector screen";
+        if (el("player-waiting-screen")) el("player-waiting-screen").style.display = "flex";
+        const wrap0 = el("player-options");
+        if (wrap0) { wrap0.hidden = true; wrap0.innerHTML = ""; }
+        return;
+      }
+
+      // When quiz is ended, show completion screen
+      if (room.status === "ended") {
+        if (el("waiting-title")) el("waiting-title").innerHTML = "Quiz Complete! 🎉";
+        if (el("waiting-subtitle")) el("waiting-subtitle").textContent = "Check the host screen for your results.";
+        if (el("player-waiting-screen")) el("player-waiting-screen").style.display = "flex";
+        const wrap0 = el("player-options");
+        if (wrap0) wrap0.hidden = true;
         return;
       }
 
@@ -674,7 +693,7 @@
       if (el("player-question-number"))
         el("player-question-number").textContent = `${currentIndex + 1} / ${questions.length}`;
       if (el("player-question")) el("player-question").textContent = q.question;
-      if (el("player-timer")) el("player-timer").textContent = timerText(room);
+      updateTimerEl(el("player-timer"), room);
 
       // Show chapter name on player screen
       if (el("player-chapter")) el("player-chapter").textContent = room.chapter || "";
@@ -696,14 +715,12 @@
         const selected = (answered && answered.answer === index) || (this.pendingAnswer === index);
         const correct = room.showAnswer && index === q.correctAnswer;
         const wrong = room.showAnswer && selected && index !== q.correctAnswer;
-        const waiting = !isLive && !answered && !correct && !wrong;
         const cls = [
           "answer-btn",
           letterColors[index] || "",
           selected ? "selected" : "",
           correct  ? "correct"  : "",
-          wrong    ? "wrong"    : "",
-          waiting  ? "is-waiting" : ""
+          wrong    ? "wrong"    : ""
         ].filter(Boolean).join(" ");
         const radioId = `opt-${currentIndex}-${index}`;
         return `
@@ -723,11 +740,16 @@
       const hideCurrent = room.status === "question" && !room.showAnswer;
       const excludeIndex = hideCurrent ? (room.currentIndex || 0) : -1;
       const scores = scorePlayers(room.players || {}, questions, excludeIndex);
-      const mine = scores.find(r => r.id === this.id);
+      // Find by id first; fall back to name+dept in case this entry was deduplicated
+      const myData = room.players?.[this.id];
+      let mine = scores.find(r => r.id === this.id);
+      if (!mine && myData) {
+        mine = scores.find(r => r.name === myData.name && r.department === myData.department);
+      }
       if (el("player-score"))
         el("player-score").textContent = mine ? `${mine.score} point${mine.score === 1 ? "" : "s"}` : "0 points";
       if (el("player-rank")) {
-        const rank = mine ? scores.findIndex(r => r.id === this.id) + 1 : "-";
+        const rank = mine ? scores.indexOf(mine) + 1 : "-";
         el("player-rank").textContent = `Rank ${rank}`;
       }
     }
