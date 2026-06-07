@@ -133,6 +133,10 @@
         <div class="btn-row" style="margin-top:24px;">
           <a class="btn" href="host.html">Host Screen</a>
           <a class="btn btn-secondary" href="index.html">Home</a>
+          <button class="btn btn-secondary" id="btn-clear-lb"
+            style="border-color:var(--red);color:var(--red);">
+            Clear Leaderboard
+          </button>
         </div>
       </section>
     </div>
@@ -286,6 +290,16 @@
         if (panel) panel.classList.add("active");
       });
     }
+
+    // Clear leaderboard button
+    document.getElementById("btn-clear-lb").addEventListener("click", () => {
+      if (!confirm("Delete the entire leaderboard for ALL chapters? This cannot be undone.")) return;
+      if (!firebaseReady()) { alert("Firebase not connected."); return; }
+      if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+      firebase.database().ref("leaderboard").remove()
+        .then(() => alert("Leaderboard cleared."))
+        .catch(err => alert("Failed: " + err.message));
+    });
 
     if (!firebaseReady()) {
       document.getElementById("lb-loading").remove();

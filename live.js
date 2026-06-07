@@ -297,6 +297,18 @@
       setTimeout(() => this.saveLeaderboard(), 800);
     },
 
+    clearPlayers() {
+      if (!confirm("Remove all joined players? They will need to scan and join again.")) return;
+      roomRef("players").set({}).catch(this.reportError("Clear players"));
+    },
+
+    clearLeaderboard() {
+      if (!confirm("Delete the entire leaderboard for ALL chapters? This cannot be undone.")) return;
+      const database = db();
+      if (!database) return;
+      database.ref("leaderboard").remove().catch(this.reportError("Clear leaderboard"));
+    },
+
     newGame() {
       // Return to lobby — keep players so they don't need to re-join
       roomRef().update({

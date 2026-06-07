@@ -277,10 +277,16 @@
           </div>
 
           <div class="host-card">
-            <h3>
-              Players Joined
-              <span class="player-count-badge" id="player-count-badge">0</span>
-            </h3>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <h3 style="margin:0;">
+                Players Joined
+                <span class="player-count-badge" id="player-count-badge">0</span>
+              </h3>
+              <button onclick="DCSLiveQuiz.host.clearPlayers()"
+                style="background:none;border:1px solid var(--red);color:var(--red);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">
+                Clear Players
+              </button>
+            </div>
             <div id="player-list-lobby">
               <div class="empty-state" style="padding:16px 0;font-size:13px;">
                 Waiting for players to scan and join…
