@@ -1,21 +1,10 @@
 /* =========================================================================
    DCS Awareness Quiz — Question Bank
-   ------------------------------------------------------------------------
-   Schema:
-     {
-       category:      "Chapter name shown in host chapter selector",
-       question:      "The question text",
-       options:       ["A", "B", "C", "D"],
-       correctAnswer: <0-based index of the correct option>
-     }
+   Source: Question.txt  (10 chapters × 5 questions = 50 total)
    ========================================================================= */
 window.QUESTIONS = [
 
-  // ================================================================
-  // TRAINING CHAPTERS  (from Question.txt — 5 questions each)
-  // ================================================================
-
-  // ---- Process Control ----
+  // ── Process Control ─────────────────────────────────
   {
     category: "Process Control",
     question: "What is the main purpose of process control?",
@@ -72,7 +61,7 @@ window.QUESTIONS = [
     correctAnswer: 0
   },
 
-  // ---- I/O and Field Devices ----
+  // ── I/O and Field Devices ────────────────────────────
   {
     category: "I/O and Field Devices",
     question: "What does an RTD measure?",
@@ -129,7 +118,7 @@ window.QUESTIONS = [
     correctAnswer: 0
   },
 
-  // ---- DeltaV ----
+  // ── DeltaV ──────────────────────────────────────────
   {
     category: "DeltaV",
     question: "What is DeltaV?",
@@ -186,7 +175,7 @@ window.QUESTIONS = [
     correctAnswer: 0
   },
 
-  // ---- DeltaV Function Blocks ----
+  // ── DeltaV Function Blocks ───────────────────────────
   {
     category: "DeltaV Function Blocks",
     question: "What is the purpose of an AI Block?",
@@ -243,7 +232,7 @@ window.QUESTIONS = [
     correctAnswer: 0
   },
 
-  // ---- Logic ----
+  // ── Logic ────────────────────────────────────────────
   {
     category: "Logic",
     question: "Logic is mainly based on:",
@@ -300,7 +289,7 @@ window.QUESTIONS = [
     correctAnswer: 0
   },
 
-  // ---- Control Strategy ----
+  // ── Control Strategy ─────────────────────────────────
   {
     category: "Control Strategy",
     question: "What is a Control Strategy?",
@@ -357,7 +346,7 @@ window.QUESTIONS = [
     correctAnswer: 0
   },
 
-  // ---- DeltaV Sequence ----
+  // ── DeltaV Sequence ──────────────────────────────────
   {
     category: "DeltaV Sequence",
     question: "What is a Sequence used for?",
@@ -414,7 +403,7 @@ window.QUESTIONS = [
     correctAnswer: 0
   },
 
-  // ---- Alarm ----
+  // ── Alarm ────────────────────────────────────────────
   {
     category: "Alarm",
     question: "Why are alarms used?",
@@ -471,7 +460,7 @@ window.QUESTIONS = [
     correctAnswer: 0
   },
 
-  // ---- SIS (Safety Instrumented System) ----
+  // ── SIS (Safety Instrumented System) ────────────────
   {
     category: "SIS (Safety Instrumented System)",
     question: "What is the main purpose of SIS?",
@@ -528,7 +517,7 @@ window.QUESTIONS = [
     correctAnswer: 0
   },
 
-  // ---- PI System ----
+  // ── PI System ────────────────────────────────────────
   {
     category: "PI System",
     question: "What is PI System mainly used for?",
@@ -583,292 +572,6 @@ window.QUESTIONS = [
       "Replacing transmitters"
     ],
     correctAnswer: 0
-  },
-
-  // ================================================================
-  // SUPPLEMENTARY / ADVANCED QUESTIONS  (original question bank)
-  // ================================================================
-
-  // ---- DCS Fundamentals ----
-  {
-    category: "DCS Fundamentals",
-    question: "What does DCS stand for?",
-    options: [
-      "Digital Control System",
-      "Distributed Control System",
-      "Direct Communication System",
-      "Data Control Station"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "DCS Fundamentals",
-    question: "Which architecture best describes a modern DCS?",
-    options: [
-      "Single centralized controller",
-      "Distributed controllers networked together",
-      "Standalone PLCs with no network",
-      "Manual pneumatic loops"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "DCS Fundamentals",
-    question: "Which is NOT typically a part of a DCS?",
-    options: [
-      "Operator Workstation",
-      "Controller",
-      "Field I/O",
-      "Domestic Wi-Fi Router"
-    ],
-    correctAnswer: 3
-  },
-  {
-    category: "DCS Fundamentals",
-    question: "A DCS is primarily designed for:",
-    options: [
-      "Discrete manufacturing only",
-      "Continuous and batch process control",
-      "Office automation",
-      "Building HVAC only"
-    ],
-    correctAnswer: 1
-  },
-
-  // ---- Emerson DeltaV (advanced) ----
-  {
-    category: "Emerson DeltaV",
-    question: "DeltaV is a DCS product manufactured by:",
-    options: ["Siemens", "Honeywell", "Emerson", "ABB"],
-    correctAnswer: 2
-  },
-  {
-    category: "Emerson DeltaV",
-    question: "Which configuration tool is used to build DeltaV control strategies?",
-    options: ["Control Studio", "Step 7", "RSLogix", "Studio 5000"],
-    correctAnswer: 0
-  },
-  {
-    category: "Emerson DeltaV",
-    question: "In DeltaV, what is a 'Module'?",
-    options: [
-      "A hardware I/O card only",
-      "A control strategy containing function blocks",
-      "A network switch",
-      "An operator screen"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "Emerson DeltaV",
-    question: "Which network is used between DeltaV controllers and workstations?",
-    options: [
-      "Profibus DP",
-      "DeltaV Control Network (Ethernet-based)",
-      "Modbus RTU",
-      "HART only"
-    ],
-    correctAnswer: 1
-  },
-
-  // ---- Siemens PCS7 ----
-  {
-    category: "Siemens PCS7",
-    question: "PCS7 is a process control system from:",
-    options: ["Emerson", "Yokogawa", "Siemens", "Rockwell"],
-    correctAnswer: 2
-  },
-  {
-    category: "Siemens PCS7",
-    question: "Which engineering platform is used to configure PCS7?",
-    options: [
-      "Control Studio",
-      "SIMATIC Manager / TIA Portal",
-      "Experion PKS",
-      "Ovation"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "Siemens PCS7",
-    question: "PCS7 typically uses which fieldbus for process I/O?",
-    options: ["DeviceNet", "Profibus PA / Profinet", "ControlNet", "CAN open"],
-    correctAnswer: 1
-  },
-
-  // ---- PLC Basics ----
-  {
-    category: "PLC Basics",
-    question: "What does PLC stand for?",
-    options: [
-      "Power Line Controller",
-      "Programmable Logic Controller",
-      "Process Loop Console",
-      "Plant Level Computer"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "PLC Basics",
-    question: "The most common PLC programming language standardized by IEC 61131-3 is:",
-    options: ["Ladder Logic", "Python", "C++", "HTML"],
-    correctAnswer: 0
-  },
-  {
-    category: "PLC Basics",
-    question: "A PLC scan cycle typically includes:",
-    options: [
-      "Read inputs → execute logic → update outputs",
-      "Print logs → reboot → wait",
-      "Compile → link → load",
-      "Render UI → fetch data → display"
-    ],
-    correctAnswer: 0
-  },
-
-  // ---- HMI ----
-  {
-    category: "HMI",
-    question: "HMI stands for:",
-    options: [
-      "Human Machine Interface",
-      "High Memory Interface",
-      "Hybrid Monitoring Instrument",
-      "Hardwired Module Indicator"
-    ],
-    correctAnswer: 0
-  },
-  {
-    category: "HMI",
-    question: "A good HMI screen design should:",
-    options: [
-      "Use bright saturated colors everywhere",
-      "Highlight abnormal conditions clearly with muted normal state",
-      "Show every available tag at once",
-      "Avoid trends and alarms"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "HMI",
-    question: "ISA-101 is a standard related to:",
-    options: [
-      "Cable colors",
-      "HMI design for process automation",
-      "Pump sizing",
-      "Cybersecurity for PLCs"
-    ],
-    correctAnswer: 1
-  },
-
-  // ---- Alarm Management (advanced) ----
-  {
-    category: "Alarm Management",
-    question: "ISA-18.2 is a standard for:",
-    options: [
-      "Cable trays",
-      "Alarm management",
-      "Loop tuning",
-      "Hazardous area classification"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "Alarm Management",
-    question: "An 'alarm flood' refers to:",
-    options: [
-      "A water leak in the control room",
-      "Excessive alarms in a short time, overwhelming the operator",
-      "Missing alarm sounds",
-      "Backup alarm storage full"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "Alarm Management",
-    question: "Which is NOT a recommended alarm priority level?",
-    options: ["Low", "Medium", "High", "Optional"],
-    correctAnswer: 3
-  },
-
-  // ---- SIS (advanced) ----
-  {
-    category: "SIS",
-    question: "SIS stands for:",
-    options: [
-      "Standard Industrial Software",
-      "Safety Instrumented System",
-      "Sensor Integration Server",
-      "Site Information System"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "SIS",
-    question: "SIL stands for:",
-    options: [
-      "Signal Input Level",
-      "Safety Integrity Level",
-      "System Inhibit Logic",
-      "Standard Interlock Layer"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "SIS",
-    question: "IEC 61511 covers:",
-    options: [
-      "HMI graphics",
-      "Functional safety for the process industry",
-      "Profinet timing",
-      "Cable insulation ratings"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "SIS",
-    question: "A SIS is designed to:",
-    options: [
-      "Optimize production throughput",
-      "Take the process to a safe state on demand",
-      "Replace the DCS",
-      "Generate production reports"
-    ],
-    correctAnswer: 1
-  },
-
-  // ---- Cybersecurity ----
-  {
-    category: "Cybersecurity",
-    question: "IEC 62443 is a standard for:",
-    options: [
-      "Process safety",
-      "Industrial automation and control system cybersecurity",
-      "Alarm rationalization",
-      "Loop checking"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "Cybersecurity",
-    question: "The Purdue Model is used to:",
-    options: [
-      "Tune PID loops",
-      "Define network segmentation levels in ICS environments",
-      "Size control valves",
-      "Calibrate transmitters"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "Cybersecurity",
-    question: "Which is a best practice for DCS cybersecurity?",
-    options: [
-      "Share operator passwords across shifts",
-      "Plug personal USB drives into engineering stations",
-      "Segment OT networks from IT and enforce least privilege",
-      "Expose controllers directly to the internet"
-    ],
-    correctAnswer: 2
   }
+
 ];
