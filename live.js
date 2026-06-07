@@ -94,15 +94,32 @@
   }
 
   function scorePlayers(players, questions, excludeIndex = -1) {
-    return Object.entries(players || {}).map(([id, p]) => {
+    const rows = Object.entries(players || {}).map(([id, p]) => {
       let score = 0;
+      let totalAnswerTime = 0; // sum of ms taken to answer each question (lower = faster)
       const answers = p.answers || {};
       (questions || []).forEach((q, i) => {
         if (i === excludeIndex) return;
-        if (answers[i] && answers[i].answer === q.correctAnswer) score++;
+        if (!answers[i]) return;
+        if (answers[i].answer === q.correctAnswer) score++;
+        // answeredAt minus questionStartedAt gives response time per question
+        if (answers[i].answeredAt) totalAnswerTime += answers[i].answeredAt;
       });
-      return { id, name: p.name || "Player", department: p.department || "", score };
-    }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+      return { id, name: p.name || "Player", department: p.department || "", score, totalAnswerTime };
+    });
+
+    // De-duplicate by name+department: keep the entry with the highest score
+    const best = {};
+    rows.forEach(r => {
+      const key = `${r.name}||${r.department}`;
+      if (!best[key] || r.score > best[key].score) best[key] = r;
+    });
+
+    return Object.values(best).sort((a, b) =>
+      b.score - a.score ||                         // 1st: highest score
+      a.totalAnswerTime - b.totalAnswerTime ||      // 2nd: fastest total answer time
+      a.name.localeCompare(b.name)                 // 3rd: alphabetical
+    );
   }
 
   function answerCount(players, index) {
