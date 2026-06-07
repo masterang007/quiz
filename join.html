@@ -2,85 +2,252 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0a2540" />
-  <title>Join Live Quiz · DCS Awareness</title>
+  <title>Join · DCS Quiz</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Mobile player full-screen layout ─────────────── */
+    body { background: var(--navy-900); }
+
+    .player-shell {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Join form card sits centred on the navy bg */
+    #join-card {
+      margin: 20px 16px;
+      background: var(--white);
+      border-radius: var(--radius);
+    }
+
+    /* Answer screen fills the whole viewport */
+    #answer-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 12px 14px 16px;
+      gap: 10px;
+    }
+
+    /* Top status bar */
+    .player-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: rgba(255,255,255,0.75);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 0;
+    }
+    .player-topbar .timer {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 16px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-weight: 800;
+    }
+    .player-topbar .timer.warn { background: var(--amber); }
+    .player-topbar .timer.crit { background: var(--red); }
+
+    /* Waiting banner */
+    #player-waiting-banner {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.8);
+      border-radius: 10px;
+      padding: 10px 14px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* 2×2 grid of big answer buttons */
+    .answer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .answer-btn {
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      font-weight: 900;
+      color: #fff;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.08s, box-shadow 0.1s, opacity 0.15s;
+      position: relative;
+      min-height: 110px;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .answer-btn input[type=radio] { display: none; }
+    .answer-btn:active { transform: scale(0.94); }
+
+    .answer-a { background: #e74c3c; }
+    .answer-b { background: #2471b5; }
+    .answer-c { background: #d4a017; }
+    .answer-d { background: #1e9d55; }
+
+    /* Selected — white ring */
+    .answer-btn.selected {
+      box-shadow: inset 0 0 0 6px rgba(255,255,255,0.9);
+      transform: scale(0.96);
+    }
+
+    /* After reveal */
+    .answer-btn.correct {
+      background: #1e9d55 !important;
+      box-shadow: inset 0 0 0 6px rgba(255,255,255,0.95);
+    }
+    .answer-btn.wrong {
+      background: #7a1f17 !important;
+      opacity: 0.55;
+    }
+
+    /* Waiting state (host hasn't started yet) */
+    .answer-btn.is-waiting {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* Locked (no interaction) */
+    #player-options[data-locked] .answer-btn { cursor: default; }
+
+    /* Status message */
+    #player-message {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.7);
+      padding: 4px 0;
+    }
+
+    /* Score + Rank row */
+    .player-score-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .player-score-box {
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+    }
+    .player-score-box .ps-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      opacity: 0.7;
+    }
+    .player-score-box .ps-value {
+      font-size: 22px;
+      font-weight: 900;
+      margin-top: 2px;
+    }
+
+    /* Config warning */
+    #config-warning {
+      margin: 16px;
+      background: var(--red-bg);
+      color: var(--red);
+      border-radius: 10px;
+      padding: 14px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+  </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="logo">DCS</div>
-    <div>
-      <h1>Live DCS Awareness Quiz</h1>
-      <div class="sub">Player · Room <span id="room-code">main</span></div>
+  <div class="player-shell">
+
+    <div id="config-warning" hidden>
+      Firebase is not configured. Ask the host to finish setup.
     </div>
-  </header>
 
-  <main>
-    <div class="container">
-      <section class="message-banner" id="config-warning" hidden>
-        Firebase is not configured yet. Please ask the host to finish setup.
-      </section>
+    <!-- ── JOIN FORM ─────────────────────────────── -->
+    <section class="card" id="join-card">
+      <h2>Join Quiz</h2>
+      <p class="subtitle" id="player-state">Waiting for host.</p>
 
-      <section class="card" id="join-card">
-        <h2>Join Quiz</h2>
-        <p class="subtitle" id="player-state">Waiting for host.</p>
+      <form id="join-form" novalidate>
+        <label for="player-name">Full name</label>
+        <input id="player-name" type="text" maxlength="60"
+               placeholder="e.g. John Smith" autocomplete="name" required />
 
-        <form id="join-form" novalidate>
-          <label for="player-name">Full name</label>
-          <input id="player-name" type="text" maxlength="60" placeholder="e.g. John Smith" autocomplete="name" required />
+        <label for="player-department">Department</label>
+        <select id="player-department" required>
+          <option value="" disabled selected>Select your department</option>
+          <option value="Operations">Operations</option>
+          <option value="Process">Process</option>
+          <option value="Instrument">Instrument</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Maintenance">Maintenance</option>
+          <option value="Engineering">Engineering</option>
+        </select>
 
-          <label for="player-department">Department</label>
-          <select id="player-department" required>
-            <option value="" disabled selected>Select your department</option>
-            <option value="Operations">Operations</option>
-            <option value="Process">Process</option>
-            <option value="Instrument">Instrument</option>
-            <option value="Electrical">Electrical</option>
-            <option value="Maintenance">Maintenance</option>
-            <option value="Engineering">Engineering</option>
-          </select>
-
-          <div class="btn-row">
-            <button type="submit" class="btn">Join Live Quiz</button>
-          </div>
-        </form>
-      </section>
-
-      <section class="card" id="answer-card" hidden>
-        <div class="quiz-header">
-          <div><span id="player-category">Category</span> · <span id="player-question-number">0 / 0</span></div>
-          <div class="timer" id="player-timer">--</div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Join Quiz</button>
         </div>
+      </form>
+    </section>
 
-        <h2 class="question-text" id="player-question">Waiting for host.</h2>
-        <div class="options" id="player-options"></div>
+    <!-- ── ANSWER SCREEN ─────────────────────────── -->
+    <section id="answer-card" hidden>
 
-        <div class="result-grid">
-          <div class="stat">
-            <div class="label">Score</div>
-            <div class="value" id="player-score">0 points</div>
-          </div>
-          <div class="stat">
-            <div class="label">Rank</div>
-            <div class="value" id="player-rank">Rank -</div>
-          </div>
+      <!-- Category · Q number · Timer -->
+      <div class="player-topbar">
+        <span>
+          <span id="player-category"></span>
+          &nbsp;·&nbsp;
+          <span id="player-question-number">0 / 0</span>
+        </span>
+        <span class="timer" id="player-timer">--</span>
+      </div>
+
+      <!-- Waiting message (shown when host hasn't started yet) -->
+      <div id="player-waiting-banner" hidden>
+        Waiting for host to start the question…
+      </div>
+
+      <!-- A B C D buttons -->
+      <div class="answer-grid" id="player-options">
+        <!-- Rendered by live.js -->
+      </div>
+
+      <!-- Status line -->
+      <div id="player-message">Look at the screen and tap your answer.</div>
+
+      <!-- Score + Rank -->
+      <div class="player-score-row">
+        <div class="player-score-box">
+          <div class="ps-label">Score</div>
+          <div class="ps-value" id="player-score">0 pts</div>
         </div>
+        <div class="player-score-box">
+          <div class="ps-label">Rank</div>
+          <div class="ps-value" id="player-rank">—</div>
+        </div>
+      </div>
 
-        <div class="message-banner" id="player-message">Wait for the host.</div>
-      </section>
-    </div>
-  </main>
+    </section>
 
-  <footer>© DCS Awareness Quiz</footer>
+  </div><!-- .player-shell -->
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="questions.js"></script>
   <script src="live.js"></script>
-  <script>
-    DCSLiveQuiz.player.init();
-  </script>
+  <script>DCSLiveQuiz.player.init();</script>
 </body>
 </html>

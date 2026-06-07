@@ -573,13 +573,13 @@
     },
 
     markSelectedLocally(index) {
-      $$("#player-options .option").forEach((label, i) => {
+      $$("#player-options .answer-btn").forEach((label, i) => {
         const input = label.querySelector("input[type=radio]");
         label.classList.toggle("selected", i === index);
         if (input) input.checked = (i === index);
       });
       if (el("player-message")) el("player-message").textContent =
-        "Answer selected. You can change it until the host moves on.";
+        "Answer locked in. You can change it until the host moves on.";
     },
 
     render() {
@@ -622,28 +622,38 @@
       // Show chapter name on player screen
       if (el("player-chapter")) el("player-chapter").textContent = room.chapter || "";
 
+      // Show/hide waiting banner
+      const waitBanner = el("player-waiting-banner");
+      if (waitBanner) waitBanner.hidden = isLive || !!answered;
+
       const wrap = el("player-options");
       if (!wrap) return;
       wrap.toggleAttribute("data-locked", locked);
+
+      const letterColors = ["answer-a", "answer-b", "answer-c", "answer-d"];
       wrap.innerHTML = q.options.map((option, index) => {
         const selected = (answered && answered.answer === index) || (this.pendingAnswer === index);
         const correct = room.showAnswer && index === q.correctAnswer;
         const wrong = room.showAnswer && selected && index !== q.correctAnswer;
-        const cls = ["option", selected?"selected":"", correct?"correct":"", wrong?"wrong":"",
-          locked && !answered && !correct && !wrong ? "is-waiting" : ""].filter(Boolean).join(" ");
+        const waiting = !isLive && !answered && !correct && !wrong;
+        const cls = [
+          "answer-btn",
+          letterColors[index] || "",
+          selected ? "selected" : "",
+          correct  ? "correct"  : "",
+          wrong    ? "wrong"    : "",
+          waiting  ? "is-waiting" : ""
+        ].filter(Boolean).join(" ");
         const radioId = `opt-${currentIndex}-${index}`;
         return `
           <label class="${cls}" for="${radioId}">
             <input type="radio" id="${radioId}" name="player-answer" value="${index}"
-              ${selected?"checked":""} ${locked?"disabled":""} />
-            <span class="letter">${optionLetter(index)}</span>
-            <span class="text">${escapeHtml(option)}</span>
+              ${selected ? "checked" : ""} ${locked ? "disabled" : ""} />
+            ${optionLetter(index)}
           </label>
         `;
       }).join("");
 
-      const card = el("answer-card");
-      if (card) card.classList.toggle("is-waiting", !isLive && !answered);
       if (el("player-message")) el("player-message").textContent = messageForPlayer(room, answered);
     },
 
