@@ -39,6 +39,10 @@
     return a;
   }
 
+  function slugify(str) {
+    return String(str).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  }
+
   function questionBank() {
     const bank = window.QUESTIONS || [];
     return bank.map((q, index) => ({
@@ -55,8 +59,13 @@
     );
   }
 
-  function buildGameQuestions() {
-    return shuffle(questionBank()).slice(0, CONFIG.QUESTIONS_PER_GAME).map((q) => {
+  function buildGameQuestions(chapter) {
+    let bank = questionBank();
+    if (chapter && chapter !== "all") {
+      bank = bank.filter(q => q.category === chapter);
+    }
+    const count = Math.min(bank.length, CONFIG.QUESTIONS_PER_GAME);
+    return shuffle(bank).slice(0, count).map((q) => {
       const paired = q.options.map((text, index) => ({
         text,
         isCorrect: index === q.correctAnswer
@@ -164,9 +173,15 @@
     },
 
     newGame() {
-      const questions = buildGameQuestions();
+      const chapterEl = $("#chapter-select");
+      const chapter = chapterEl ? chapterEl.value : "all";
+      const chapterLabel = chapter === "all"
+        ? "All Chapters"
+        : chapter;
+
+      const questions = buildGameQuestions(chapter);
       if (questions.length === 0) {
-        alert("Question bank is empty or invalid.");
+        alert("No questions found for this chapter. Please check your question bank.");
         return;
       }
       roomRef().set({
@@ -176,6 +191,7 @@
         questionEndsAt: null,
         showAnswer: false,
         createdAt: now(),
+        chapter: chapterLabel,
         questions,
         players: {}
       }).catch(reportHostError("Create game"));
@@ -220,6 +236,53 @@
       roomRef().update({ status: "ended", showAnswer: true })
         .catch(reportHostError("End game"));
       this.stopLocalTimer();
+      // Save final scores to persistent Firebase leaderboard
+      setTimeout(() => this.saveLeaderboard(), 600);
+    },
+
+    saveLeaderboard() {
+      const room = this.room;
+      if (!room || !room.players || !room.questions) return;
+      const database = db();
+      if (!database) return;
+
+      const chapter = room.chapter || "All Chapters";
+      const chapterKey = slugify(chapter);
+      const questions = room.questions;
+      const players = room.players;
+      const completedAt = now();
+
+      const updates = {};
+      Object.entries(players).forEach(([id, player]) => {
+        if (!player.name) return;
+        let score = 0;
+        const answers = player.answers || {};
+        questions.forEach((q, index) => {
+          if (answers[index] && answers[index].answer === q.correctAnswer) score++;
+        });
+        const recordId = `${completedAt}_${id.slice(0, 8)}`;
+        updates[`leaderboard/${chapterKey}/${recordId}`] = {
+          name: player.name,
+          department: player.department || "",
+          score,
+          total: questions.length,
+          chapter,
+          completedAt
+        };
+      });
+
+      if (Object.keys(updates).length === 0) return;
+
+      database.ref().update(updates)
+        .then(() => {
+          const saved = $("#host-state");
+          if (saved) {
+            const prev = saved.textContent;
+            saved.textContent = "Scores saved to leaderboard!";
+            setTimeout(() => { saved.textContent = prev; }, 3000);
+          }
+        })
+        .catch(err => console.error("Leaderboard save failed:", err));
     },
 
     startLocalTimer() {
@@ -252,11 +315,20 @@
       const players = room.players || {};
       const scores = scorePlayers(players, questions);
 
-      $("#host-state").textContent = statusText(room.status);
+      // Show active chapter badge next to status
+      const chapterText = room.chapter ? ` · ${room.chapter}` : "";
+      $("#host-state").textContent = statusText(room.status) + chapterText;
+
       $("#player-count").textContent = Object.keys(players).length;
       $("#answer-count").textContent = answerCount(players, room.currentIndex || 0);
       $("#question-count").textContent = questions.length;
       $("#current-number").textContent = Math.min((room.currentIndex || 0) + 1, questions.length || 1);
+
+      // Hide chapter selector while a game is running
+      const chapterRow = $("#chapter-select-row");
+      if (chapterRow) {
+        chapterRow.hidden = room.status !== "lobby" || (room.currentIndex || 0) > 0;
+      }
 
       this.renderQuestion(q, room);
       this.renderScores(scores);
@@ -273,6 +345,8 @@
       $("#btn-show-answer").disabled = true;
       $("#btn-next-question").disabled = true;
       $("#btn-end-game").disabled = true;
+      const chapterRow = $("#chapter-select-row");
+      if (chapterRow) chapterRow.hidden = false;
     },
 
     renderQuestion(q, room) {
@@ -321,7 +395,7 @@
   const player = {
     room: null,
     id: playerId(),
-    pendingAnswer: null, // optimistic UI: index user just tapped, before DB confirms
+    pendingAnswer: null,
 
     init() {
       $("#room-code").textContent = ROOM_ID;
@@ -341,9 +415,6 @@
         this.join();
       });
 
-      // Delegated change listener for the radio inputs — attached ONCE,
-      // survives every re-render. We listen for `change` on the wrapper so
-      // re-rendering the radio markup never tears the listener down.
       const optionsWrap = $("#player-options");
       optionsWrap.addEventListener("change", (e) => {
         const input = e.target;
@@ -388,18 +459,12 @@
       if (this.room.status !== "question") return;
       const currentIndex = this.room.currentIndex || 0;
 
-      // Allow the user to change their mind while the question is still live.
-      // Each tap re-writes the same Firebase node — the final value before
-      // the host moves on (Show Answer / Next Question) is what counts.
       this.pendingAnswer = index;
       this.markSelectedLocally(index);
 
       roomRef(`players/${this.id}/answers/${currentIndex}`)
         .set({ answer: index, answeredAt: now() })
         .then(() => {
-          // Only clear the local pending marker if it still matches this
-          // tap — otherwise a faster subsequent tap would erase its own
-          // marker when its predecessor resolved.
           if (this.pendingAnswer === index) this.pendingAnswer = null;
         })
         .catch(err => {
@@ -410,10 +475,6 @@
         });
     },
 
-    /**
-     * Show a local visual selection without locking the radios — users can
-     * still switch to a different option until the host advances.
-     */
     markSelectedLocally(index) {
       $$("#player-options .option").forEach((label, i) => {
         const input = label.querySelector("input[type=radio]");
@@ -459,9 +520,6 @@
       const playerData = room.players?.[this.id] || {};
       const answered = playerData.answers?.[currentIndex];
       const isLive = room.status === "question";
-      // Users can change their answer freely until the host advances:
-      // the question is "locked" only when it's no longer live or the
-      // host has revealed the correct answer.
       const locked = !isLive || !!room.showAnswer;
 
       $("#player-category").textContent = q.category || "General";
@@ -469,11 +527,10 @@
       $("#player-question").textContent = q.question;
       $("#player-timer").textContent = timerText(room);
 
-      // Render answer options as radio inputs wrapped in <label>s.
-      // Tapping the radio or the label triggers a `change` event which our
-      // delegated listener on #player-options handles. We disable the radio
-      // itself when the question is locked (waiting for host, already
-      // answered, etc.) so the OS-native radio behaves correctly.
+      // Show chapter name if available
+      const chapterEl = $("#player-chapter");
+      if (chapterEl) chapterEl.textContent = room.chapter || "";
+
       const wrap = $("#player-options");
       wrap.toggleAttribute("data-locked", locked);
       wrap.innerHTML = q.options.map((option, index) => {
@@ -507,7 +564,6 @@
         `;
       }).join("");
 
-      // Make the "waiting for host" state visually unmistakable on the card.
       const card = $("#answer-card");
       if (card) card.classList.toggle("is-waiting", !isLive && !answered);
 
@@ -516,9 +572,8 @@
 
     renderPlayerScore(room) {
       const questions = room.questions || [];
-      // While a question is live and the answer hasn't been revealed yet,
-      // exclude the current question from the score so players can't tell
-      // immediately whether they got it right.
+      // Don't count the current question while it is still live —
+      // players should not see if their answer was right before the host reveals.
       const hideCurrent = room.status === "question" && !room.showAnswer;
       const excludeIndex = hideCurrent ? (room.currentIndex || 0) : -1;
       const scores = scorePlayers(room.players || {}, questions, excludeIndex);

@@ -1,18 +1,594 @@
 /* =========================================================================
    DCS Awareness Quiz — Question Bank
-   30+ multiple-choice questions covering DCS fundamentals, DeltaV, PCS7,
-   PLC, HMI, I/O, field devices, process control, alarm management, SIS,
-   cybersecurity, and PI System.
    ------------------------------------------------------------------------
    Schema:
      {
-       category:      "Short topic tag (shown in review)",
+       category:      "Chapter name shown in host chapter selector",
        question:      "The question text",
        options:       ["A", "B", "C", "D"],
-       correctAnswer: <index 0..3 of the correct option>
+       correctAnswer: <0-based index of the correct option>
      }
    ========================================================================= */
 window.QUESTIONS = [
+
+  // ================================================================
+  // TRAINING CHAPTERS  (from Question.txt — 5 questions each)
+  // ================================================================
+
+  // ---- Process Control ----
+  {
+    category: "Process Control",
+    question: "What is the main purpose of process control?",
+    options: [
+      "To decorate the HMI",
+      "To keep the process at the desired value",
+      "To store documents",
+      "To print reports"
+    ],
+    correctAnswer: 1
+  },
+  {
+    category: "Process Control",
+    question: "What does PV stand for?",
+    options: [
+      "Process Variable",
+      "Pressure Valve",
+      "Process Valve",
+      "Process Value"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Process Control",
+    question: "What does a controller do when temperature becomes too high?",
+    options: [
+      "Ignore it",
+      "Take action to reduce the temperature",
+      "Shut down the DCS",
+      "Create a report"
+    ],
+    correctAnswer: 1
+  },
+  {
+    category: "Process Control",
+    question: "Which is a basic control loop?",
+    options: [
+      "Sensor, Controller, Valve",
+      "Sensor, Printer, Monitor",
+      "Valve, Keyboard, Mouse",
+      "Controller only"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Process Control",
+    question: "Feedback control uses:",
+    options: [
+      "Actual process value (PV)",
+      "Weather data",
+      "Historical data",
+      "Operator opinion"
+    ],
+    correctAnswer: 0
+  },
+
+  // ---- I/O and Field Devices ----
+  {
+    category: "I/O and Field Devices",
+    question: "What does an RTD measure?",
+    options: [
+      "Flow",
+      "Temperature",
+      "Pressure",
+      "Level"
+    ],
+    correctAnswer: 1
+  },
+  {
+    category: "I/O and Field Devices",
+    question: "What does an Analog Input (AI) receive?",
+    options: [
+      "Signal from a field device",
+      "Signal to a valve",
+      "Signal to a printer",
+      "Signal from an operator"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "I/O and Field Devices",
+    question: "A digital signal is usually:",
+    options: [
+      "ON/OFF",
+      "4-20 mA",
+      "0-100%",
+      "1-5 V"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "I/O and Field Devices",
+    question: "What is the function of a valve positioner?",
+    options: [
+      "Control valve position",
+      "Control alarms",
+      "Control the controller",
+      "Store data"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "I/O and Field Devices",
+    question: "4-20 mA is an example of:",
+    options: [
+      "Analog signal",
+      "Digital signal",
+      "Ethernet signal",
+      "Wireless signal"
+    ],
+    correctAnswer: 0
+  },
+
+  // ---- DeltaV ----
+  {
+    category: "DeltaV",
+    question: "What is DeltaV?",
+    options: [
+      "A DCS system",
+      "A PLC only",
+      "A database",
+      "A printer"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV",
+    question: "What is used by an operator to monitor the process?",
+    options: [
+      "Operator Station",
+      "Controller",
+      "I/O Card",
+      "Transmitter"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV",
+    question: "What does a DeltaV Controller do?",
+    options: [
+      "Executes control strategies",
+      "Prints reports",
+      "Stores manuals",
+      "Displays trends"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV",
+    question: "What is DeltaV Explorer mainly used for?",
+    options: [
+      "System configuration",
+      "Alarm acknowledgement",
+      "Trend viewing",
+      "Email"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV",
+    question: "What is the purpose of a Historian?",
+    options: [
+      "Store process data",
+      "Control valves",
+      "Execute logic",
+      "Create alarms"
+    ],
+    correctAnswer: 0
+  },
+
+  // ---- DeltaV Function Blocks ----
+  {
+    category: "DeltaV Function Blocks",
+    question: "What is the purpose of an AI Block?",
+    options: [
+      "Read an analog signal",
+      "Control a valve",
+      "Store data",
+      "Generate alarms"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV Function Blocks",
+    question: "Which block is commonly used for process control?",
+    options: [
+      "PID Block",
+      "Alarm Block",
+      "Trend Block",
+      "Report Block"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV Function Blocks",
+    question: "What does an AO Block do?",
+    options: [
+      "Send an analog output signal",
+      "Receive alarms",
+      "Store history",
+      "Generate reports"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV Function Blocks",
+    question: "What is a CALC Block used for?",
+    options: [
+      "Calculations and logic",
+      "Trend storage",
+      "Alarm management",
+      "Printing"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV Function Blocks",
+    question: "Function blocks are connected to create:",
+    options: [
+      "A Control Strategy",
+      "A Trend",
+      "An Alarm List",
+      "A Report"
+    ],
+    correctAnswer: 0
+  },
+
+  // ---- Logic ----
+  {
+    category: "Logic",
+    question: "Logic is mainly based on:",
+    options: [
+      "TRUE or FALSE",
+      "Colors",
+      "Trends",
+      "Reports"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Logic",
+    question: "Which gate requires all inputs to be TRUE?",
+    options: [
+      "OR",
+      "AND",
+      "NOT",
+      "XOR"
+    ],
+    correctAnswer: 1
+  },
+  {
+    category: "Logic",
+    question: "What does a NOT gate do?",
+    options: [
+      "Reverses the input state",
+      "Adds inputs",
+      "Stores data",
+      "Creates alarms"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Logic",
+    question: "A digital input is usually:",
+    options: [
+      "ON or OFF",
+      "4-20 mA",
+      "0-100%",
+      "Temperature"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Logic",
+    question: "Why is logic used?",
+    options: [
+      "To make automatic decisions",
+      "To create reports",
+      "To store trends",
+      "To display graphics"
+    ],
+    correctAnswer: 0
+  },
+
+  // ---- Control Strategy ----
+  {
+    category: "Control Strategy",
+    question: "What is a Control Strategy?",
+    options: [
+      "Connected blocks used to control a process",
+      "A list of alarms",
+      "A trend display",
+      "A report"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Control Strategy",
+    question: "In feedback control, the controller uses:",
+    options: [
+      "PV (Process Variable)",
+      "Alarm status",
+      "Operator name",
+      "Historical data"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Control Strategy",
+    question: "Feedforward control acts based on:",
+    options: [
+      "Measured disturbance",
+      "Alarm priority",
+      "Trend data",
+      "Reports"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Control Strategy",
+    question: "Which block is commonly found in a control strategy?",
+    options: [
+      "PID Block",
+      "Printer Block",
+      "Report Block",
+      "Email Block"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Control Strategy",
+    question: "Where is the control strategy executed?",
+    options: [
+      "Controller",
+      "HMI",
+      "Historian",
+      "Printer"
+    ],
+    correctAnswer: 0
+  },
+
+  // ---- DeltaV Sequence ----
+  {
+    category: "DeltaV Sequence",
+    question: "What is a Sequence used for?",
+    options: [
+      "Running steps in order",
+      "Storing trends",
+      "Managing alarms",
+      "Printing reports"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV Sequence",
+    question: "What is the first step of a sequence usually called?",
+    options: [
+      "Start Step",
+      "End Step",
+      "Alarm Step",
+      "Report Step"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV Sequence",
+    question: "Sequence control is commonly used for:",
+    options: [
+      "Batch processes",
+      "Alarm management",
+      "Data storage",
+      "Reporting"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV Sequence",
+    question: "What does a Transition do?",
+    options: [
+      "Moves to the next step when conditions are met",
+      "Creates an alarm",
+      "Stores data",
+      "Changes HMI color"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "DeltaV Sequence",
+    question: "A sequence is made up of:",
+    options: [
+      "Steps and Transitions",
+      "AI and AO",
+      "Alarms and Events",
+      "Trends and Reports"
+    ],
+    correctAnswer: 0
+  },
+
+  // ---- Alarm ----
+  {
+    category: "Alarm",
+    question: "Why are alarms used?",
+    options: [
+      "To alert the operator",
+      "To store data",
+      "To control valves",
+      "To create reports"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Alarm",
+    question: "What does Active/Unack mean?",
+    options: [
+      "Alarm is active and not acknowledged",
+      "Alarm is active and acknowledged",
+      "Alarm is cleared",
+      "Alarm is deleted"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Alarm",
+    question: "What does Active/Ack mean?",
+    options: [
+      "Alarm is active and acknowledged",
+      "Alarm is cleared",
+      "Alarm is deleted",
+      "Alarm is disabled"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Alarm",
+    question: "What does alarm priority indicate?",
+    options: [
+      "Importance of the alarm",
+      "Alarm color only",
+      "Alarm age",
+      "Operator name"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "Alarm",
+    question: "Before acknowledging an alarm, the operator should:",
+    options: [
+      "Understand the cause of the alarm",
+      "Restart the system",
+      "Delete the alarm",
+      "Turn off the HMI"
+    ],
+    correctAnswer: 0
+  },
+
+  // ---- SIS (Safety Instrumented System) ----
+  {
+    category: "SIS (Safety Instrumented System)",
+    question: "What is the main purpose of SIS?",
+    options: [
+      "Protect people, equipment, and the process",
+      "Store trends",
+      "Create reports",
+      "Display graphics"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "SIS (Safety Instrumented System)",
+    question: "When does SIS take action?",
+    options: [
+      "When a dangerous condition is detected",
+      "When a report is generated",
+      "When a trend is viewed",
+      "When an operator logs in"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "SIS (Safety Instrumented System)",
+    question: "SIS is different from DCS because:",
+    options: [
+      "It focuses on safety functions",
+      "It stores more data",
+      "It has more screens",
+      "It prints reports"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "SIS (Safety Instrumented System)",
+    question: "In a Cause & Effect Matrix, what is the \"Cause\"?",
+    options: [
+      "Condition that triggers an action",
+      "Final action",
+      "Operator response",
+      "Alarm priority"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "SIS (Safety Instrumented System)",
+    question: "Which is an example of an SIS action?",
+    options: [
+      "Close an ESD valve",
+      "Display a trend",
+      "Print a report",
+      "Save a document"
+    ],
+    correctAnswer: 0
+  },
+
+  // ---- PI System ----
+  {
+    category: "PI System",
+    question: "What is PI System mainly used for?",
+    options: [
+      "Collecting and analyzing process data",
+      "PID control",
+      "Alarm acknowledgement",
+      "Sequence control"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "PI System",
+    question: "What does PI Historian store?",
+    options: [
+      "Historical process data",
+      "Logic diagrams",
+      "Controller programs",
+      "Alarm settings"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "PI System",
+    question: "What is PI Vision used for?",
+    options: [
+      "Displaying trends and dashboards",
+      "Controlling valves",
+      "Programming controllers",
+      "Managing alarms"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "PI System",
+    question: "Where does PI System get its data from?",
+    options: [
+      "DCS, PLC, and other systems",
+      "Printers",
+      "Keyboards",
+      "Cameras"
+    ],
+    correctAnswer: 0
+  },
+  {
+    category: "PI System",
+    question: "What is a benefit of PI System?",
+    options: [
+      "Better process analysis and reporting",
+      "Replacing controllers",
+      "Replacing SIS",
+      "Replacing transmitters"
+    ],
+    correctAnswer: 0
+  },
+
+  // ================================================================
+  // SUPPLEMENTARY / ADVANCED QUESTIONS  (original question bank)
+  // ================================================================
+
   // ---- DCS Fundamentals ----
   {
     category: "DCS Fundamentals",
@@ -59,7 +635,7 @@ window.QUESTIONS = [
     correctAnswer: 1
   },
 
-  // ---- Emerson DeltaV ----
+  // ---- Emerson DeltaV (advanced) ----
   {
     category: "Emerson DeltaV",
     question: "DeltaV is a DCS product manufactured by:",
@@ -69,12 +645,7 @@ window.QUESTIONS = [
   {
     category: "Emerson DeltaV",
     question: "Which configuration tool is used to build DeltaV control strategies?",
-    options: [
-      "Control Studio",
-      "Step 7",
-      "RSLogix",
-      "Studio 5000"
-    ],
+    options: ["Control Studio", "Step 7", "RSLogix", "Studio 5000"],
     correctAnswer: 0
   },
   {
@@ -140,12 +711,7 @@ window.QUESTIONS = [
   {
     category: "PLC Basics",
     question: "The most common PLC programming language standardized by IEC 61131-3 is:",
-    options: [
-      "Ladder Logic",
-      "Python",
-      "C++",
-      "HTML"
-    ],
+    options: ["Ladder Logic", "Python", "C++", "HTML"],
     correctAnswer: 0
   },
   {
@@ -195,112 +761,7 @@ window.QUESTIONS = [
     correctAnswer: 1
   },
 
-  // ---- I/O ----
-  {
-    category: "I/O",
-    question: "A 4-20 mA signal is an example of:",
-    options: [
-      "Digital Input",
-      "Analog Input",
-      "Pulse Output",
-      "Serial Bus"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "I/O",
-    question: "Which is a typical Digital Input device?",
-    options: [
-      "Pressure transmitter",
-      "Limit switch",
-      "Control valve",
-      "Thermocouple"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "I/O",
-    question: "An RTD measures:",
-    options: [
-      "Pressure",
-      "Flow",
-      "Temperature",
-      "Level"
-    ],
-    correctAnswer: 2
-  },
-
-  // ---- Field Devices ----
-  {
-    category: "Field Devices",
-    question: "HART communication is superimposed on which signal?",
-    options: [
-      "0-10 VDC",
-      "4-20 mA",
-      "24 VDC discrete",
-      "Pneumatic 3-15 psi"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "Field Devices",
-    question: "A control valve positioner is used to:",
-    options: [
-      "Generate alarms",
-      "Accurately position the valve stem per the control signal",
-      "Measure flow",
-      "Provide PLC power"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "Field Devices",
-    question: "FOUNDATION Fieldbus and Profibus PA are examples of:",
-    options: [
-      "Wireless networks",
-      "Digital fieldbus protocols for process instrumentation",
-      "Operator panel buses",
-      "Safety-rated relays"
-    ],
-    correctAnswer: 1
-  },
-
-  // ---- Process Control ----
-  {
-    category: "Process Control",
-    question: "In a PID controller, the 'I' term addresses:",
-    options: [
-      "Rate of change",
-      "Steady-state offset (error over time)",
-      "Process noise",
-      "Loop gain only"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "Process Control",
-    question: "Cascade control is typically used to:",
-    options: [
-      "Replace PID with on/off control",
-      "Improve disturbance rejection using a secondary loop",
-      "Reduce the number of transmitters",
-      "Avoid using setpoints"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "Process Control",
-    question: "A 'setpoint' is:",
-    options: [
-      "The current measured value of a process variable",
-      "The desired target value for a process variable",
-      "The high alarm limit",
-      "A tuning constant"
-    ],
-    correctAnswer: 1
-  },
-
-  // ---- Alarm Management ----
+  // ---- Alarm Management (advanced) ----
   {
     category: "Alarm Management",
     question: "ISA-18.2 is a standard for:",
@@ -330,7 +791,7 @@ window.QUESTIONS = [
     correctAnswer: 3
   },
 
-  // ---- SIS ----
+  // ---- SIS (advanced) ----
   {
     category: "SIS",
     question: "SIS stands for:",
@@ -409,40 +870,5 @@ window.QUESTIONS = [
       "Expose controllers directly to the internet"
     ],
     correctAnswer: 2
-  },
-
-  // ---- PI System ----
-  {
-    category: "PI System",
-    question: "OSIsoft PI System is primarily used for:",
-    options: [
-      "Real-time control execution",
-      "Plant data historian and analytics",
-      "Safety interlocks",
-      "Motor starting"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "PI System",
-    question: "A 'PI Tag' represents:",
-    options: [
-      "A physical wire label",
-      "A time-series data point stored in the historian",
-      "An I/O card slot",
-      "A user account"
-    ],
-    correctAnswer: 1
-  },
-  {
-    category: "PI System",
-    question: "Which tool is commonly used to visualize PI System data?",
-    options: [
-      "PI Vision / PI ProcessBook",
-      "AutoCAD",
-      "MATLAB Simulink",
-      "Microsoft Paint"
-    ],
-    correctAnswer: 0
   }
 ];

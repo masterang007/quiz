@@ -4,56 +4,308 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0a2540" />
-  <title>Leaderboard · DCS Awareness Quiz</title>
+  <title>Chapter Leaderboard · DCS Awareness Quiz</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .lb-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .lb-tab {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 2px solid var(--gray-200);
+      background: var(--white);
+      color: var(--navy-700);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .lb-tab:hover { border-color: var(--accent); color: var(--accent); }
+    .lb-tab.active {
+      background: var(--navy-700);
+      border-color: var(--navy-700);
+      color: var(--white);
+    }
+    .chapter-panel { display: none; }
+    .chapter-panel.active { display: block; }
+
+    .lb-table th:nth-child(5),
+    .lb-table td:nth-child(5) { width: 80px; text-align: center; }
+
+    .winner-row td { background: #fffbea !important; }
+    .trophy { font-size: 18px; }
+
+    .pct-bar-wrap {
+      background: var(--gray-100);
+      border-radius: 999px;
+      height: 8px;
+      width: 80px;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+    .pct-bar {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--navy-500));
+    }
+    .lb-chapter-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--navy-900);
+      margin-bottom: 4px;
+    }
+    .lb-chapter-sub {
+      font-size: 13px;
+      color: var(--gray-700);
+      margin-bottom: 16px;
+    }
+    .winner-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #ffd54a, #f4a000);
+      color: #5a3a00;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .lb-loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--gray-700);
+    }
+    .lb-error {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--red);
+      font-weight: 700;
+    }
+    .no-firebase-note {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 18px;
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--gray-700);
+      line-height: 1.6;
+    }
+    .no-firebase-note strong { color: var(--navy-900); }
+  </style>
 </head>
 <body>
   <header class="topbar">
     <div class="logo">DCS</div>
     <div>
       <h1>DCS Awareness Quiz</h1>
-      <div class="sub">Top 10 Results</div>
+      <div class="sub">Chapter Leaderboard</div>
     </div>
   </header>
 
   <main>
-    <div class="container">
+    <div class="container" style="max-width:860px;">
       <section class="card">
-        <h2>Leaderboard</h2>
-        <p class="subtitle">Top 10 results on this device (stored locally in your browser).</p>
+        <h2>Chapter Leaderboard</h2>
+        <p class="subtitle">Top scorers per training chapter — updated live after each game.</p>
 
-        <div id="leaderboard-wrap">
-          <table class="lb-table" id="lb-table" style="display:none;">
-            <thead>
-              <tr>
-                <th style="width:60px;">Rank</th>
-                <th>Name</th>
-                <th>Department</th>
-                <th style="width:70px;">Score</th>
-                <th style="width:120px;">Date</th>
-              </tr>
-            </thead>
-            <tbody id="lb-body"></tbody>
-          </table>
-
-          <div class="empty-state" id="lb-empty">
-            No results yet. Be the first to take the quiz!
-          </div>
+        <!-- Tabs -->
+        <div class="lb-tabs" id="lb-tabs">
+          <div class="lb-loading" id="lb-loading">Loading leaderboard…</div>
         </div>
 
-        <div class="btn-row">
-          <a class="btn" href="index.html">Take the Quiz</a>
-          <button class="btn btn-secondary" id="btn-clear-lb">Clear Leaderboard</button>
+        <!-- Chapter panels rendered here -->
+        <div id="lb-panels"></div>
+
+        <div class="no-firebase-note" id="firebase-note" hidden>
+          <strong>Firebase not connected.</strong>
+          The live leaderboard requires Firebase Realtime Database.
+          Configure <code>firebase-config.js</code> with your Firebase project credentials,
+          then complete a quiz game — scores are saved automatically when the host clicks <em>End</em>.
+        </div>
+
+        <div class="btn-row" style="margin-top:24px;">
+          <a class="btn" href="host.html">Host Screen</a>
+          <a class="btn btn-secondary" href="index.html">Home</a>
         </div>
       </section>
     </div>
   </main>
 
-  <footer>© DCS Awareness Quiz</footer>
+  <footer>© DCS Awareness Quiz · Chapter Leaderboard</footer>
 
-  <script src="script.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script>
-    DCSQuiz.leaderboard.init();
+  (function () {
+    "use strict";
+
+    function firebaseReady() {
+      return window.firebase &&
+        window.FIREBASE_CONFIG &&
+        !String(window.FIREBASE_CONFIG.apiKey || "").startsWith("PASTE_");
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+      );
+    }
+
+    function formatDate(ts) {
+      if (!ts) return "-";
+      const d = new Date(ts);
+      return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    }
+
+    function pct(score, total) {
+      return total > 0 ? Math.round((score / total) * 100) : 0;
+    }
+
+    // De-duplicate by name+department — keep each person's best score per chapter
+    function bestPerPerson(records) {
+      const map = {};
+      records.forEach(r => {
+        const key = `${r.name}||${r.department}`;
+        if (!map[key] || r.score > map[key].score) {
+          map[key] = r;
+        }
+      });
+      return Object.values(map).sort((a, b) => {
+        // Sort by score desc, then percentage desc, then name asc
+        if (b.score !== a.score) return b.score - a.score;
+        return pct(b.score, b.total) - pct(a.score, a.total);
+      });
+    }
+
+    function renderPanel(chapter, records) {
+      const ranked = bestPerPerson(records);
+
+      if (ranked.length === 0) {
+        return `
+          <div class="lb-chapter-title">${escapeHtml(chapter)}</div>
+          <div class="empty-state">No scores recorded for this chapter yet.</div>
+        `;
+      }
+
+      const topScore = ranked[0].score;
+
+      const rows = ranked.map((r, i) => {
+        const p = pct(r.score, r.total);
+        const isWinner = i === 0;
+        const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`;
+        return `
+          <tr class="${isWinner ? "winner-row" : ""}">
+            <td>
+              <span class="rank-medal" style="${i >= 3 ? "background:var(--gray-200);font-size:13px;" : ""}">${medal}</span>
+              ${isWinner ? `<span class="winner-badge">🎁 Winner</span>` : ""}
+            </td>
+            <td>${escapeHtml(r.name)}</td>
+            <td>${escapeHtml(r.department)}</td>
+            <td style="font-weight:800;color:var(--navy-900);">
+              ${r.score} / ${r.total}
+              <span class="pct-bar-wrap"><span class="pct-bar" style="width:${p}%"></span></span>
+            </td>
+            <td style="text-align:center;font-weight:700;color:${p >= 80 ? "var(--green)" : p >= 60 ? "var(--amber)" : "var(--red)"};">${p}%</td>
+            <td style="font-size:12px;color:var(--gray-700);">${formatDate(r.completedAt)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      return `
+        <div class="lb-chapter-title">${escapeHtml(chapter)}</div>
+        <div class="lb-chapter-sub">${ranked.length} participant${ranked.length === 1 ? "" : "s"} · Best score per person shown</div>
+        <div style="overflow-x:auto;">
+          <table class="lb-table">
+            <thead>
+              <tr>
+                <th style="width:110px;">Rank</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Score</th>
+                <th style="width:70px;">%</th>
+                <th style="width:110px;">Date</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function render(data) {
+      const tabsEl = document.getElementById("lb-tabs");
+      const panelsEl = document.getElementById("lb-panels");
+      document.getElementById("lb-loading").remove();
+
+      if (!data || Object.keys(data).length === 0) {
+        tabsEl.innerHTML = "";
+        panelsEl.innerHTML = `<div class="empty-state">No quiz results yet. Complete a game and scores will appear here.</div>`;
+        return;
+      }
+
+      // data is keyed by slugified chapter, each value is an object of records
+      const chapters = Object.entries(data).map(([key, records]) => {
+        const arr = Object.values(records || {});
+        const chapter = (arr[0] && arr[0].chapter) ? arr[0].chapter : key;
+        return { key, chapter, records: arr };
+      }).sort((a, b) => a.chapter.localeCompare(b.chapter));
+
+      let tabHtml = "";
+      let panelHtml = "";
+
+      chapters.forEach((c, i) => {
+        const isFirst = i === 0;
+        tabHtml += `<button class="lb-tab${isFirst ? " active" : ""}" data-tab="${escapeHtml(c.key)}">${escapeHtml(c.chapter)}</button>`;
+        panelHtml += `
+          <div class="chapter-panel${isFirst ? " active" : ""}" data-panel="${escapeHtml(c.key)}">
+            ${renderPanel(c.chapter, c.records)}
+          </div>
+        `;
+      });
+
+      tabsEl.innerHTML = tabHtml;
+      panelsEl.innerHTML = panelHtml;
+
+      // Tab switching
+      tabsEl.addEventListener("click", (e) => {
+        const btn = e.target.closest(".lb-tab");
+        if (!btn) return;
+        const tab = btn.dataset.tab;
+        tabsEl.querySelectorAll(".lb-tab").forEach(b => b.classList.remove("active"));
+        panelsEl.querySelectorAll(".chapter-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        const panel = panelsEl.querySelector(`[data-panel="${tab}"]`);
+        if (panel) panel.classList.add("active");
+      });
+    }
+
+    if (!firebaseReady()) {
+      document.getElementById("lb-loading").remove();
+      document.getElementById("firebase-note").hidden = false;
+      document.getElementById("lb-tabs").innerHTML = "";
+      document.getElementById("lb-panels").innerHTML = `<div class="empty-state">Firebase not connected — see note below.</div>`;
+      return;
+    }
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(window.FIREBASE_CONFIG);
+    }
+
+    firebase.database().ref("leaderboard").on("value", snap => {
+      render(snap.val());
+    }, err => {
+      document.getElementById("lb-loading").textContent = "Could not load leaderboard: " + err.message;
+    });
+
+  })();
   </script>
 </body>
 </html>
