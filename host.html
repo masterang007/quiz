@@ -18,10 +18,13 @@
       align-items: start;
     }
     .host-card {
-      background: var(--white);
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 22px;
+      box-shadow: var(--glass-shadow);
+      padding: 24px;
     }
     .host-card h3 {
       margin: 0 0 14px;
@@ -144,10 +147,13 @@
       align-items: start;
     }
     .host-game-main {
-      background: var(--white);
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 28px;
+      box-shadow: var(--glass-shadow);
+      padding: 34px;
       min-height: calc(100vh - 160px);
     }
     .q-status-row {
@@ -178,10 +184,13 @@
 
     /* END phase */
     .end-layout {
-      background: var(--white);
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 36px;
+      box-shadow: var(--glass-shadow);
+      padding: 40px;
       text-align: center;
       max-width: 700px;
       margin: 0 auto;
@@ -202,12 +211,12 @@
       grid-template-columns: 44px 1fr 120px 80px 60px;
       align-items: center;
       gap: 8px;
-      padding: 12px 10px;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      background: var(--gray-50);
-      border: 1px solid var(--gray-200);
-      font-size: 15px;
+      padding: 14px 12px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.8);
+      font-size: 16px;
     }
     .final-score-row.winner {
       background: #fffbea;
