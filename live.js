@@ -6,7 +6,7 @@
 
   const CONFIG = {
     ROOM_ID: "main",
-    QUESTION_SECONDS: 20,
+    QUESTION_SECONDS: 100,
     ROOM_KEY: "dcs_live_room_id_v1",
     PLAYER_KEY: "dcs_live_player_id_v1"
   };
