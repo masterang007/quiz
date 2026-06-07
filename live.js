@@ -216,18 +216,43 @@
       const chapter = chapterSel ? chapterSel.value : "all";
 
       let bank = questionBank();
-      if (chapter !== "all") bank = bank.filter(q => q.category === chapter);
-
-      if (bank.length === 0) {
-        preview.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0;">No questions found for this chapter.</div>`;
-        return;
+      if (chapter !== "all") {
+        // Single chapter — simple numbered list
+        bank = bank.filter(q => q.category === chapter);
+        if (bank.length === 0) {
+          preview.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0;">No questions found.</div>`;
+          return;
+        }
+        preview.innerHTML = `
+          <div class="q-preview-header">${bank.length} questions in this chapter:</div>
+          <ol class="q-preview-list">
+            ${bank.map(q => `<li>${escapeHtml(q.question)}</li>`).join("")}
+          </ol>
+        `;
+      } else {
+        // All chapters — group by chapter
+        const groups = {};
+        bank.forEach(q => {
+          if (!groups[q.category]) groups[q.category] = [];
+          groups[q.category].push(q);
+        });
+        const sections = Object.entries(groups).map(([cat, qs]) => `
+          <div style="margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:800;color:var(--navy-700);text-transform:uppercase;
+                        letter-spacing:0.6px;margin-bottom:6px;padding:4px 0;
+                        border-bottom:2px solid var(--gray-200);">
+              ${escapeHtml(cat)} &nbsp;<span style="font-weight:400;color:var(--gray-700);">(${qs.length} questions)</span>
+            </div>
+            <ol class="q-preview-list" style="margin:0;">
+              ${qs.map(q => `<li>${escapeHtml(q.question)}</li>`).join("")}
+            </ol>
+          </div>
+        `).join("");
+        preview.innerHTML = `
+          <div class="q-preview-header">${bank.length} questions total across ${Object.keys(groups).length} chapters:</div>
+          ${sections}
+        `;
       }
-      preview.innerHTML = `
-        <div class="q-preview-header">${bank.length} questions in this chapter:</div>
-        <ol class="q-preview-list">
-          ${bank.map(q => `<li>${escapeHtml(q.question)}</li>`).join("")}
-        </ol>
-      `;
     },
 
     /* ── Game control ──────────────────────────────────── */
