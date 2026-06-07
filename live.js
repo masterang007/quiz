@@ -117,11 +117,12 @@
     return Date.now();
   }
 
-  function scorePlayers(players, questions) {
+  function scorePlayers(players, questions, excludeIndex = -1) {
     return Object.entries(players || {}).map(([id, player]) => {
       let score = 0;
       const answers = player.answers || {};
       questions.forEach((q, index) => {
+        if (index === excludeIndex) return;
         if (answers[index] && answers[index].answer === q.correctAnswer) score++;
       });
       return {
@@ -515,7 +516,12 @@
 
     renderPlayerScore(room) {
       const questions = room.questions || [];
-      const scores = scorePlayers(room.players || {}, questions);
+      // While a question is live and the answer hasn't been revealed yet,
+      // exclude the current question from the score so players can't tell
+      // immediately whether they got it right.
+      const hideCurrent = room.status === "question" && !room.showAnswer;
+      const excludeIndex = hideCurrent ? (room.currentIndex || 0) : -1;
+      const scores = scorePlayers(room.players || {}, questions, excludeIndex);
       const mine = scores.find(row => row.id === this.id);
       $("#player-score").textContent = mine ? `${mine.score} point${mine.score === 1 ? "" : "s"}` : "0 points";
       $("#player-rank").textContent = mine ? `Rank ${scores.findIndex(row => row.id === this.id) + 1}` : "Rank -";
