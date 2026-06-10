@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a2540" />
+  <title>Answer Report · eQuiz</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .rep-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .rep-toolbar select {
+      flex: 1;
+      min-width: 220px;
+    }
+    .rep-btn {
+      padding: 11px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 9px;
+      cursor: pointer;
+      border: 2px solid var(--navy-700);
+      background: var(--white);
+      color: var(--navy-700);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .rep-btn:hover { background: var(--gray-50); }
+    .rep-btn.danger { border-color: var(--red); color: var(--red); }
+
+    /* Summary stat tiles */
+    .rep-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .rep-stat {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .rep-stat .lbl {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--gray-700);
+    }
+    .rep-stat .val {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--navy-900);
+      margin-top: 3px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy-900);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin: 26px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--gray-200);
+    }
+
+    /* Participant rows (expandable) */
+    .part-row {
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .part-head {
+      display: grid;
+      grid-template-columns: 40px 1fr auto 90px 70px;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 14px;
+      cursor: pointer;
+      background: var(--white);
+      transition: background 0.12s;
+    }
+    .part-head:hover { background: var(--gray-50); }
+    .part-rank {
+      font-weight: 800;
+      color: var(--navy-700);
+      text-align: center;
+    }
+    .part-name { font-weight: 800; color: var(--navy-900); }
+    .part-dept { font-size: 12px; color: var(--gray-700); }
+    .part-score { font-weight: 800; text-align: right; color: var(--navy-900); }
+    .part-pct {
+      text-align: right;
+      font-weight: 800;
+    }
+    .part-caret {
+      transition: transform 0.18s;
+      color: var(--gray-400);
+      font-size: 12px;
+    }
+    .part-row.open .part-caret { transform: rotate(90deg); }
+
+    .part-detail {
+      display: none;
+      padding: 4px 14px 14px;
+      background: var(--gray-50);
+      border-top: 1px solid var(--gray-200);
+    }
+    .part-row.open .part-detail { display: block; }
+
+    .ans-item {
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--gray-200);
+    }
+    .ans-item:last-child { border-bottom: none; }
+    .ans-q {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--navy-900);
+      margin-bottom: 6px;
+    }
+    .ans-q .qnum {
+      display: inline-block;
+      background: var(--navy-700);
+      color: #fff;
+      border-radius: 5px;
+      padding: 1px 7px;
+      font-size: 12px;
+      margin-right: 7px;
+    }
+    .ans-pick {
+      font-size: 13px;
+      padding: 3px 0;
+    }
+    .ans-pick .tag {
+      display: inline-block;
+      width: 70px;
+      color: var(--gray-700);
+      font-weight: 600;
+    }
+    .ans-pick.correct { color: #0d5c33; font-weight: 700; }
+    .ans-pick.wrong   { color: #7a1f17; font-weight: 700; }
+    .ans-pick.muted   { color: var(--gray-700); }
+    .badge-ok, .badge-no, .badge-na {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-left: 6px;
+    }
+    .badge-ok { background: var(--green-bg); color: var(--green); }
+    .badge-no { background: var(--red-bg);  color: var(--red); }
+    .badge-na { background: var(--gray-100); color: var(--gray-700); }
+
+    /* Per-question analysis */
+    .qa-row {
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      background: var(--white);
+    }
+    .qa-q { font-size: 14px; font-weight: 700; color: var(--navy-900); margin-bottom: 8px; }
+    .qa-q .qnum {
+      display: inline-block;
+      background: var(--navy-700);
+      color: #fff;
+      border-radius: 5px;
+      padding: 1px 7px;
+      font-size: 12px;
+      margin-right: 7px;
+    }
+    .qa-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .qa-correct {
+      font-size: 13px;
+      color: #0d5c33;
+      font-weight: 700;
+    }
+    .qa-bar-wrap {
+      flex: 1;
+      min-width: 120px;
+      height: 10px;
+      background: var(--gray-100);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .qa-bar {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--green), #2bbd6e);
+    }
+    .qa-pct { font-size: 13px; font-weight: 800; min-width: 84px; text-align: right; }
+
+    .no-firebase-note {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 18px;
+      font-size: 14px;
+      color: var(--gray-700);
+      line-height: 1.6;
+    }
+
+    @media print {
+      .topbar, footer, .rep-toolbar, .btn-row, .part-caret { display: none !important; }
+      .part-detail { display: block !important; }
+      .part-row { break-inside: avoid; }
+      body { background: #fff; }
+    }
+    @media (max-width: 600px) {
+      .rep-stats { grid-template-columns: repeat(2, 1fr); }
+      .part-head { grid-template-columns: 32px 1fr 60px 54px; }
+      .part-head .part-score { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">eQ</div>
+    <div>
+      <h1>eQuiz</h1>
+      <div class="sub">Answer Report</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container" style="max-width:900px;">
+      <section class="card">
+        <h2>Answer Report</h2>
+        <p class="subtitle">Review every participant's answers from each completed quiz.</p>
+
+        <div id="rep-loading" class="empty-state">Loading reports…</div>
+
+        <div id="rep-content" hidden>
+          <div class="rep-toolbar">
+            <select id="session-select"></select>
+            <button class="rep-btn" id="btn-print">🖨 Print</button>
+            <button class="rep-btn" id="btn-csv">⬇ Export CSV</button>
+            <button class="rep-btn danger" id="btn-clear">Clear All</button>
+          </div>
+          <div id="session-body"></div>
+        </div>
+
+        <div id="firebase-note" class="no-firebase-note" hidden>
+          <strong>Firebase not connected.</strong>
+          Reports are saved automatically when the host ends a quiz. Configure
+          <code>firebase-config.js</code> first.
+        </div>
+
+        <div class="btn-row" style="margin-top:24px;">
+          <a class="btn" href="host.html">Host Screen</a>
+          <a class="btn btn-secondary" href="leaderboard.html">Leaderboard</a>
+          <a class="btn btn-secondary" href="index.html">← Home</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>© eQuiz · Answer Report</footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    const LETTERS = ["A", "B", "C", "D", "E", "F"];
+    let SESSIONS = [];   // sorted newest-first
+    let current = null;  // currently selected session object
+
+    function firebaseReady() {
+      return window.firebase && window.FIREBASE_CONFIG &&
+        !String(window.FIREBASE_CONFIG.apiKey || "").startsWith("PASTE_");
+    }
+    function escapeHtml(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    }
+    function letter(i) { return LETTERS[i] || String(i + 1); }
+    function fmtDate(ts) {
+      if (!ts) return "-";
+      return new Date(ts).toLocaleString("en-GB", {
+        day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+      });
+    }
+    function pctColor(p) {
+      return p >= 80 ? "var(--green)" : p >= 50 ? "var(--amber)" : "var(--red)";
+    }
+
+    // Build a ranked array of participants for a session
+    function rankedPlayers(session) {
+      const total = session.total || (session.questions || []).length;
+      return Object.values(session.players || {})
+        .map(p => ({
+          name: p.name || "Player",
+          department: p.department || "",
+          score: p.score || 0,
+          answers: p.answers || {},
+          pct: total > 0 ? Math.round((p.score || 0) / total * 100) : 0
+        }))
+        .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+    }
+
+    function renderSession(session) {
+      const body = document.getElementById("session-body");
+      const questions = session.questions || [];
+      const total = session.total || questions.length;
+      const players = rankedPlayers(session);
+
+      if (players.length === 0) {
+        body.innerHTML = `<div class="empty-state">No participants recorded for this session.</div>`;
+        return;
+      }
+
+      // ── Summary stats ──
+      const avgPct = Math.round(players.reduce((s, p) => s + p.pct, 0) / players.length);
+      const topName = players[0].name;
+      // Hardest question = lowest % correct
+      let hardest = "-";
+      if (questions.length) {
+        let worst = { i: 0, correct: Infinity };
+        questions.forEach((q, i) => {
+          let c = 0;
+          players.forEach(p => { if (p.answers[i] && p.answers[i].answer === q.correctAnswer) c++; });
+          if (c < worst.correct) worst = { i, correct: c };
+        });
+        hardest = "Q" + (worst.i + 1);
+      }
+
+      const stats = `
+        <div class="rep-stats">
+          <div class="rep-stat"><div class="lbl">Participants</div><div class="val">${players.length}</div></div>
+          <div class="rep-stat"><div class="lbl">Questions</div><div class="val">${total}</div></div>
+          <div class="rep-stat"><div class="lbl">Average</div><div class="val">${avgPct}%</div></div>
+          <div class="rep-stat"><div class="lbl">Hardest</div><div class="val">${hardest}</div></div>
+        </div>
+        <div style="font-size:13px;color:var(--gray-700);margin-bottom:8px;">
+          <strong style="color:var(--navy-900);">${escapeHtml(session.chapter || "Quiz")}</strong>
+          &nbsp;·&nbsp; ${fmtDate(session.completedAt)}
+          &nbsp;·&nbsp; Top scorer: <strong>${escapeHtml(topName)}</strong>
+        </div>
+      `;
+
+      // ── Participant list (expandable) ──
+      const partRows = players.map((p, idx) => {
+        const detail = questions.map((q, i) => {
+          const a = p.answers[i];
+          const answered = a && Number.isInteger(a.answer);
+          const isCorrect = answered && a.answer === q.correctAnswer;
+          const correctText = q.options ? q.options[q.correctAnswer] : "";
+          let pickLine, badge;
+          if (!answered) {
+            pickLine = `<div class="ans-pick muted"><span class="tag">No answer</span>—</div>`;
+            badge = `<span class="badge-na">SKIPPED</span>`;
+          } else {
+            const chosenText = q.options ? q.options[a.answer] : "";
+            pickLine = `<div class="ans-pick ${isCorrect ? "correct" : "wrong"}">
+              <span class="tag">Answered</span>${letter(a.answer)}. ${escapeHtml(chosenText)}</div>`;
+            badge = isCorrect ? `<span class="badge-ok">✓ CORRECT</span>` : `<span class="badge-no">✗ WRONG</span>`;
+          }
+          const correctLine = (!isCorrect)
+            ? `<div class="ans-pick correct"><span class="tag">Correct</span>${letter(q.correctAnswer)}. ${escapeHtml(correctText)}</div>`
+            : "";
+          return `
+            <div class="ans-item">
+              <div class="ans-q"><span class="qnum">Q${i + 1}</span>${escapeHtml(q.question)} ${badge}</div>
+              ${pickLine}
+              ${correctLine}
+            </div>`;
+        }).join("");
+
+        return `
+          <div class="part-row" data-idx="${idx}">
+            <div class="part-head">
+              <span class="part-rank">${idx + 1}</span>
+              <span>
+                <div class="part-name">${escapeHtml(p.name)}</div>
+                <div class="part-dept">${escapeHtml(p.department)}</div>
+              </span>
+              <span class="part-caret">▶</span>
+              <span class="part-score">${p.score} / ${total}</span>
+              <span class="part-pct" style="color:${pctColor(p.pct)};">${p.pct}%</span>
+            </div>
+            <div class="part-detail">${detail}</div>
+          </div>`;
+      }).join("");
+
+      // ── Per-question analysis ──
+      const qaRows = questions.map((q, i) => {
+        let correct = 0, answered = 0;
+        players.forEach(p => {
+          const a = p.answers[i];
+          if (a && Number.isInteger(a.answer)) {
+            answered++;
+            if (a.answer === q.correctAnswer) correct++;
+          }
+        });
+        const p = players.length > 0 ? Math.round(correct / players.length * 100) : 0;
+        const correctText = q.options ? q.options[q.correctAnswer] : "";
+        return `
+          <div class="qa-row">
+            <div class="qa-q"><span class="qnum">Q${i + 1}</span>${escapeHtml(q.question)}</div>
+            <div class="qa-meta">
+              <span class="qa-correct">✓ ${letter(q.correctAnswer)}. ${escapeHtml(correctText)}</span>
+              <span class="qa-bar-wrap"><span class="qa-bar" style="width:${p}%;background:${p >= 50 ? "" : "var(--red)"};"></span></span>
+              <span class="qa-pct" style="color:${pctColor(p)};">${correct}/${players.length} (${p}%)</span>
+            </div>
+          </div>`;
+      }).join("");
+
+      body.innerHTML = `
+        ${stats}
+        <div class="section-title">Participants &nbsp;<span style="font-weight:500;color:var(--gray-700);font-size:12px;text-transform:none;">(click a name to see all answers)</span></div>
+        ${partRows}
+        <div class="section-title">Question Analysis</div>
+        ${qaRows}
+      `;
+
+      // Expand/collapse
+      body.querySelectorAll(".part-head").forEach(head => {
+        head.addEventListener("click", () => head.parentElement.classList.toggle("open"));
+      });
+    }
+
+    function populateSelect() {
+      const sel = document.getElementById("session-select");
+      sel.innerHTML = SESSIONS.map((s, i) =>
+        `<option value="${i}">${escapeHtml(s.chapter || "Quiz")} — ${fmtDate(s.completedAt)} (${Object.keys(s.players || {}).length} participants)</option>`
+      ).join("");
+      sel.onchange = () => { current = SESSIONS[Number(sel.value)]; renderSession(current); };
+    }
+
+    function exportCsv() {
+      if (!current) return;
+      const questions = current.questions || [];
+      const total = current.total || questions.length;
+      const players = rankedPlayers(current);
+      const header = ["Rank", "Name", "Department",
+        ...questions.map((q, i) => `Q${i + 1}`), "Score", "Percent"];
+      const rows = players.map((p, idx) => {
+        const cells = [idx + 1, p.name, p.department];
+        questions.forEach((q, i) => {
+          const a = p.answers[i];
+          if (!a || !Number.isInteger(a.answer)) { cells.push("-"); return; }
+          const ok = a.answer === q.correctAnswer ? "✓" : "✗";
+          cells.push(`${letter(a.answer)} ${ok}`);
+        });
+        cells.push(`${p.score}/${total}`, `${p.pct}%`);
+        return cells;
+      });
+      const csv = [header, ...rows]
+        .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      const safe = (current.chapter || "quiz").replace(/[^a-z0-9]+/gi, "_");
+      a.download = `eQuiz_report_${safe}_${current.completedAt}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function render(data) {
+      document.getElementById("rep-loading").hidden = true;
+      const content = document.getElementById("rep-content");
+
+      if (!data || Object.keys(data).length === 0) {
+        content.hidden = true;
+        const body = document.getElementById("session-body");
+        document.getElementById("rep-loading").hidden = false;
+        document.getElementById("rep-loading").className = "empty-state";
+        document.getElementById("rep-loading").textContent =
+          "No reports yet. Complete a quiz and the report will appear here automatically.";
+        return;
+      }
+
+      SESSIONS = Object.entries(data)
+        .map(([key, s]) => Object.assign({ _key: key }, s))
+        .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+
+      content.hidden = false;
+      populateSelect();
+      current = SESSIONS[0];
+      renderSession(current);
+    }
+
+    // ── Buttons ──
+    document.getElementById("btn-print").addEventListener("click", () => window.print());
+    document.getElementById("btn-csv").addEventListener("click", exportCsv);
+    document.getElementById("btn-clear").addEventListener("click", () => {
+      if (!confirm("Delete ALL saved reports? This cannot be undone.")) return;
+      if (!firebaseReady()) return;
+      if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+      firebase.database().ref("reports").remove()
+        .then(() => alert("All reports cleared."))
+        .catch(err => alert("Failed: " + err.message));
+    });
+
+    // ── Init ──
+    if (!firebaseReady()) {
+      document.getElementById("rep-loading").hidden = true;
+      document.getElementById("firebase-note").hidden = false;
+      return;
+    }
+    if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+    firebase.database().ref("reports").on("value",
+      snap => render(snap.val()),
+      err => {
+        document.getElementById("rep-loading").textContent = "Could not load reports: " + err.message;
+      });
+  })();
+  </script>
+</body>
+</html>

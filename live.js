@@ -327,8 +327,11 @@
       roomRef().update({ status: "ended", showAnswer: true })
         .catch(this.reportError("End game"));
       this.stopLocalTimer();
-      // Save to persistent leaderboard after Firebase propagates
-      setTimeout(() => this.saveLeaderboard(), 800);
+      // Save persistent records after Firebase propagates
+      setTimeout(() => {
+        this.saveLeaderboard();
+        this.saveReport();
+      }, 800);
     },
 
     clearPlayers() {
@@ -389,6 +392,52 @@
       database.ref().update(updates)
         .then(() => console.log("Leaderboard saved."))
         .catch(err => console.error("Leaderboard save failed:", err));
+    },
+
+    // Save a full detailed snapshot of the game (every player's answer to every
+    // question) so it can be reviewed later on the Report page.
+    saveReport() {
+      const room = this.room;
+      if (!room || !room.players || !room.questions) return;
+      const database = db();
+      if (!database) return;
+
+      const chapter = room.chapter || "All Chapters";
+      const completedAt = now();
+
+      // Snapshot the questions exactly as they were asked (shuffled order included)
+      const questions = room.questions.map(q => ({
+        category: q.category || "",
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer
+      }));
+
+      const players = {};
+      Object.entries(room.players).forEach(([id, p]) => {
+        if (!p.name) return;
+        let score = 0;
+        const answers = p.answers || {};
+        room.questions.forEach((q, i) => {
+          if (answers[i] && answers[i].answer === q.correctAnswer) score++;
+        });
+        players[id] = {
+          name: p.name,
+          department: p.department || "",
+          score,
+          answers: answers
+        };
+      });
+
+      if (!Object.keys(players).length) return;
+      database.ref(`reports/${completedAt}`).set({
+        chapter,
+        completedAt,
+        total: room.questions.length,
+        questions,
+        players
+      }).then(() => console.log("Report saved."))
+        .catch(err => console.error("Report save failed:", err));
     },
 
     startLocalTimer() {
