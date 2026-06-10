@@ -43,9 +43,14 @@
 
   function optionLetter(i) { return ["A","B","C","D","E","F"][i] || String(i+1); }
 
+  // Holds the question bank loaded from Firebase (null until loaded / if empty).
+  // Falls back to the bundled window.QUESTIONS (starter set) when not present.
+  let LIVE_BANK = null;
+
   function questionBank() {
-    return (window.QUESTIONS || []).map((q, i) => ({
-      id: `q${i+1}`,
+    const source = (LIVE_BANK && LIVE_BANK.length) ? LIVE_BANK : (window.QUESTIONS || []);
+    return source.map((q, i) => ({
+      id: q.id || `q${i+1}`,
       category: q.category || "General",
       question: q.question,
       options: q.options,
@@ -54,6 +59,20 @@
       q.question && Array.isArray(q.options) &&
       q.options.length >= 2 && Number.isInteger(q.correctAnswer)
     );
+  }
+
+  // Subscribe to the editable question bank in Firebase. Calls `onChange`
+  // whenever it updates so the host can refresh its chapter list / preview.
+  function loadQuestionBank(onChange) {
+    const database = db();
+    if (!database) { if (onChange) onChange(); return; }
+    database.ref("questionBank").on("value", snap => {
+      const val = snap.val();
+      LIVE_BANK = val
+        ? Object.values(val).sort((a, b) => (a.order || 0) - (b.order || 0))
+        : null;
+      if (onChange) onChange();
+    });
   }
 
   function buildGameQuestions(chapter) {
@@ -178,10 +197,17 @@
       const chapterSel = el("chapter-select");
       if (chapterSel) {
         chapterSel.addEventListener("change", () => this.renderQuestionPreview());
-        this.renderQuestionPreview();
       }
+      this.populateChapters();
+      this.renderQuestionPreview();
 
       if (!db()) return;
+
+      // Load the editable question bank; refresh chapters + preview when it changes
+      loadQuestionBank(() => {
+        this.populateChapters();
+        this.renderQuestionPreview();
+      });
 
       // Bind buttons
       const on = (id, fn) => { const b = el(id); if (b) b.addEventListener("click", fn); };
@@ -215,6 +241,24 @@
           }).catch(err => console.error("Lobby init:", err));
         }
       });
+    },
+
+    // Populate the chapter dropdown from the current question bank,
+    // preserving the current selection where possible.
+    populateChapters() {
+      const sel = el("chapter-select");
+      if (!sel) return;
+      const prev = sel.value || "all";
+      const cats = [];
+      const seen = new Set();
+      questionBank().forEach(q => {
+        if (q.category && !seen.has(q.category)) { seen.add(q.category); cats.push(q.category); }
+      });
+      sel.innerHTML =
+        `<option value="all">All Chapters (Mixed)</option>` +
+        cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+      // restore selection if still valid
+      sel.value = (prev === "all" || cats.includes(prev)) ? prev : "all";
     },
 
     // Show questions for the selected chapter in the lobby preview

@@ -305,9 +305,14 @@
 
           <button class="btn btn-start-quiz" id="btn-start-quiz">▶ Start Quiz</button>
 
-          <a href="leaderboard.html" class="btn btn-secondary" style="text-align:center;font-size:14px;padding:10px;">
-            View Chapter Leaderboard
-          </a>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <a href="manage.html" class="btn btn-secondary" style="text-align:center;font-size:14px;padding:10px;">
+              ✏️ Edit Questions
+            </a>
+            <a href="leaderboard.html" class="btn btn-secondary" style="text-align:center;font-size:14px;padding:10px;">
+              🏆 Leaderboard
+            </a>
+          </div>
         </div>
 
       </div>
@@ -390,20 +395,8 @@
   <script src="questions.js"></script>
   <script src="live.js"></script>
   <script>
-    // Populate chapter dropdown from question bank
-    (function () {
-      const sel = document.getElementById("chapter-select");
-      const seen = new Set();
-      (window.QUESTIONS || []).forEach(q => {
-        if (q.category && !seen.has(q.category)) {
-          seen.add(q.category);
-          const opt = document.createElement("option");
-          opt.value = q.category;
-          opt.textContent = q.category;
-          sel.appendChild(opt);
-        }
-      });
-    })();
+    // Chapter dropdown is populated by host.init() from the Firebase question
+    // bank (falling back to the bundled starter set in questions.js).
     DCSLiveQuiz.host.init();
   </script>
 </body>
